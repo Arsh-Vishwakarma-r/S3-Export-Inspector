@@ -11,50 +11,21 @@ import base64
 
 st.set_page_config(page_title="S3 Export Inspector", layout="wide")
 
-# -------------------------------
-# Sidebar AWS credentials section
-# -------------------------------
-st.sidebar.header("🔐 AWS Credentials")
-aws_access_key_id = st.sidebar.text_input("AWS Access Key ID", type="password")
-aws_secret_access_key = st.sidebar.text_input("AWS Secret Access Key", type="password")
-aws_session_token = st.sidebar.text_input("AWS Session Token (optional)", type="password")
+# Sidebar for AWS credentials
+st.sidebar.header("AWS Credentials")
+aws_access_key = st.sidebar.text_input("AWS Access Key ID")
+aws_secret_key = st.sidebar.text_input("AWS Secret Access Key", type="password")
 aws_region = st.sidebar.text_input("AWS Region", value="us-east-1")
 
-# -------------------------------
-# Initialize boto3 if creds provided
-# -------------------------------
-s3 = None
-if aws_access_key_id and aws_secret_access_key:
-    try:
-        session = boto3.Session(
-            aws_access_key_id=aws_access_key_id,
-            aws_secret_access_key=aws_secret_access_key,
-            aws_session_token=aws_session_token if aws_session_token else None,
-            region_name=aws_region
-        )
-        s3 = session.client("s3")
-        st.sidebar.success("✅ AWS Credentials loaded successfully!")
-    except Exception as e:
-        st.sidebar.error(f"❌ Failed to load credentials: {e}")
+if aws_access_key and aws_secret_key:
+    session = boto3.Session(
+        aws_access_key_id=aws_access_key,
+        aws_secret_access_key=aws_secret_key,
+        region_name=aws_region
+    )
+    s3 = session.client("s3")
 else:
-    st.sidebar.warning("Please enter AWS credentials to continue.")
-
-# -------------------------------
-# Main app
-# -------------------------------
-st.title("   S3 Export Inspector")  # 3 spaces before title text
-
-if s3:
-    # Example: list buckets
-    try:
-        buckets = s3.list_buckets()
-        bucket_names = [b['Name'] for b in buckets['Buckets']]
-        st.subheader("Available Buckets:")
-        st.write(bucket_names)
-    except Exception as e:
-        st.error(f"Error accessing S3: {e}")
-else:
-    st.info("Enter credentials in the sidebar to use the app.")
+    st.warning("Please enter AWS credentials in the sidebar.")
 
 @st.cache_resource
 def create_sso_session(profile_name=None):
@@ -526,5 +497,6 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
