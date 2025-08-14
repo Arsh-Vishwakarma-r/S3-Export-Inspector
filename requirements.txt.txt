@@ -1,5 +1,8 @@
-pandas
 streamlit
+pandas
 boto3
 botocore
 plotly
+os
+io
+base64
