@@ -12,15 +12,12 @@ import base64
 st.set_page_config(page_title="S3 Export Viewer", layout="wide")
 
 @st.cache_resource
-def create_sso_session(profile_name):
-    try:
-        return boto3.Session(profile_name=profile_name) if profile_name else boto3.Session()
-    except ProfileNotFound:
-        st.error(f"❌ AWS profile '{profile_name}' not found.")
-        return None
-    except ClientError as e:
-        st.error(f"❌ AWS Client Error: {str(e)}")
-        return None
+def create_sso_session(profile_name=None):
+    return boto3.Session(
+        aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
+        aws_session_token=os.environ.get("AWS_SESSION_TOKEN")
+    )
 
 @st.cache_data(show_spinner=False)
 def list_files_and_history(s3_path, profile_name):
@@ -484,3 +481,4 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
