@@ -9,6 +9,48 @@ from concurrent.futures import ThreadPoolExecutor
 import plotly.graph_objects as go
 import base64
 
+import streamlit as st
+import boto3
+
+# Load default from Secrets Manager
+default_creds = {
+    "aws_access_key_id": st.secrets.get("AWS_ACCESS_KEY_ID", ""),
+    "aws_secret_access_key": st.secrets.get("AWS_SECRET_ACCESS_KEY", ""),
+    "aws_session_token": st.secrets.get("AWS_SESSION_TOKEN", "")
+}
+
+# Sidebar for user credentials
+st.sidebar.header("🔑 AWS Credentials")
+with st.sidebar.form("aws_form"):
+    access_key = st.text_input("Access Key ID", value=default_creds["aws_access_key_id"])
+    secret_key = st.text_input("Secret Access Key", type="password", value=default_creds["aws_secret_access_key"])
+    session_token = st.text_area("Session Token", value=default_creds["aws_session_token"])
+    submitted = st.form_submit_button("Use these credentials")
+
+if submitted:
+    st.session_state["aws"] = {
+        "aws_access_key_id": access_key,
+        "aws_secret_access_key": secret_key,
+        "aws_session_token": session_token
+    }
+
+# Priority: UI creds > Secrets Manager
+if "aws" in st.session_state:
+    creds = st.session_state["aws"]
+    st.success("✅ Using credentials entered in UI!")
+else:
+    creds = default_creds
+    st.info("ℹ️ Using credentials from Secrets Manager.")
+
+# Initialize boto3 client
+s3 = boto3.client(
+    "s3",
+    aws_access_key_id=creds["aws_access_key_id"],
+    aws_secret_access_key=creds["aws_secret_access_key"],
+    aws_session_token=creds["aws_session_token"]
+)
+
+
 @st.cache_resource
 def create_sso_session(profile_name=None):
     return boto3.Session(
@@ -479,6 +521,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
