@@ -287,6 +287,9 @@ if st.session_state.show_results and s3_path_input:
                     f"s3://{bucket}/{current_key}" if is_new == "Yes" else f"s3://{bucket}/{past_frames[file_name][1]}"
                 ]
 
+            with ThreadPoolExecutor() as executor:
+                rows = list(executor.map(lambda f: process_file(*f), all_files))
+
 
             df_result = pd.DataFrame(rows, columns=[
                 "Frame Id", "Frame Type", "Is New Frame?", "Impression Change?",
@@ -521,6 +524,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
