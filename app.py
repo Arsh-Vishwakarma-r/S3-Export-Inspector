@@ -24,36 +24,36 @@ with st.sidebar.form("aws_form"):
     access_key = st.text_input(
         "Access Key ID",
         value=default_creds["aws_access_key_id"],
-        type="password"  # 👈 Hide Access Key
+        type="password"
     )
-
     secret_key = st.text_input(
         "Secret Access Key",
         value=default_creds["aws_secret_access_key"],
-        type="password"  # 👈 Already hidden
+        type="password"
     )
-
     session_token = st.text_input(
         "Session Token",
         value=default_creds["aws_session_token"],
-        type="password"  # 👈 Works here, text_area not allowed
+        type="password"
     )
-
     submitted = st.form_submit_button("Use these credentials")
+
+# ✅ Only save creds if user submitted
+if submitted and (access_key or secret_key or session_token):
     st.session_state["aws"] = {
         "aws_access_key_id": access_key,
         "aws_secret_access_key": secret_key,
-        "aws_session_token": session_token
+        "aws_session_token": session_token,
     }
 
-# Priority: UI creds > Secrets Manager
+# ✅ Priority: UI creds > Secrets Manager
 if "aws" in st.session_state:
     creds = st.session_state["aws"]
     st.success("✅ Using credentials entered in UI!")
 else:
     creds = default_creds
     st.info("ℹ️ Using credentials from Secrets Manager.")
-
+    
 # Initialize boto3 client
 s3 = boto3.client(
     "s3",
@@ -536,6 +536,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
