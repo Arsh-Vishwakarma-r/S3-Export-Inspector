@@ -195,6 +195,25 @@ def read_impact_sum(_s3_client, bucket, key):
         return df['IMPACTS'].sum()
     except Exception:
         return "Error"
+@st.cache_data(show_spinner=False)
+def read_user_s3_path(_s3_client, bucket, prefix):
+    """
+    Reads report.json and extracts the base User S3 Path.
+    Looks for an inputPath ending with 'demographic/' and strips that part.
+    """
+    try:
+        report_key = prefix.rstrip("/") + "/report.json"
+        response = _s3_client.get_object(Bucket=bucket, Key=report_key)
+        data = json.loads(response["Body"].read().decode("utf-8"))
+
+        input_paths = data.get("inputPaths", [])
+        if isinstance(input_paths, list):
+            for path in input_paths:
+                if path.rstrip("/").endswith("demographic"):
+                    return path.rsplit("/", 2)[0] + "/"   # drop 'demographic/'
+        return "N/A"
+    except Exception:
+        return "N/A"
 
 st.title("🔍 S3 Export Inspector")#🅅🄸🄾🄾🄷
 col1, col2 = st.columns(2)
@@ -240,6 +259,9 @@ if st.session_state.show_results and s3_path_input:
             session = create_sso_session(profile_input)
             s3 = session.client('s3')
 
+            # Extract the parent folder of the current timestamp to locate report.json
+            timestamp_parent_prefix = "/".join(prefix.strip("/").split("/")[:-1])
+            user_s3_path = read_user_s3_path(s3, bucket, timestamp_parent_prefix)
             def process_file(file_name, category):
                 current_key = frame_file_map.get(file_name)
                 is_new = "No" if file_name in past_frames else "Yes"
@@ -296,7 +318,8 @@ if st.session_state.show_results and s3_path_input:
                 return [
                     file_name, category, is_new, impression_change,
                     impact_sum_fmt, past_sum_fmt, impact_variance_html, impact_variance_raw,
-                    f"s3://{bucket}/{current_key}" if is_new == "Yes" else f"s3://{bucket}/{past_frames[file_name][1]}"
+                    f"s3://{bucket}/{current_key}" if is_new == "Yes" else f"s3://{bucket}/{past_frames[file_name][1]}",
+                    user_s3_path    
                 ]
 
             with ThreadPoolExecutor() as executor:
@@ -308,7 +331,9 @@ if st.session_state.show_results and s3_path_input:
                 "Current Impact Sum Annually (in K)",
                 "Previous Impact Sum Annually (in K)",
                 "Impact Variance Annually (in K)",
-                "Impact Variance (Value)", "S3 File Path"
+                "Impact Variance (Value)",
+                "S3 File Path",
+                "User S3 Path"
             ])
 
             # Convert your Mr. Bean PNG to Base64 (one-time; replace 'bean.png' with your file)
@@ -572,6 +597,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
