@@ -22,25 +22,44 @@ default_creds = {
 # Sidebar for user credentials
 st.sidebar.header("🔑 AWS Credentials")
 with st.sidebar.form("aws_form"):
-    # Toggle for Access Key
-    access_key = st.text_input(
-        "Access Key ID",
-        value=default_creds["aws_access_key_id"],
-    )
 
-    # Toggle for Secret Key
-    secret_key = st.text_input(
-        "Secret Access Key",
-        value=default_creds["aws_secret_access_key"],
-    )
+    # --- Access Key ---
+    c1, c2 = st.columns([4, 1])
+    with c1:
+        access_key = st.text_input(
+            "Access Key ID",
+            value=default_creds["aws_access_key_id"],
+            type="password" if st.session_state.get("hide_access", True) else "default"
+        )
+    with c2:
+        if st.form_submit_button("👁", use_container_width=True):
+            st.session_state["hide_access"] = not st.session_state.get("hide_access", True)
 
-    # Toggle for Session Token (use text_input instead of text_area)
-    session_token = st.text_input(
-        "Session Token",
-        value=default_creds["aws_session_token"],
-    )
+    # --- Secret Key ---
+    c3, c4 = st.columns([4, 1])
+    with c3:
+        secret_key = st.text_input(
+            "Secret Access Key",
+            value=default_creds["aws_secret_access_key"],
+            type="password" if st.session_state.get("hide_secret", True) else "default"
+        )
+    with c4:
+        if st.form_submit_button("👁", use_container_width=True, key="eye_secret"):
+            st.session_state["hide_secret"] = not st.session_state.get("hide_secret", True)
 
-    submitted = st.form_submit_button("Use these credentials")
+    # --- Session Token ---
+    c5, c6 = st.columns([4, 1])
+    with c5:
+        session_token = st.text_input(
+            "Session Token",
+            value=default_creds["aws_session_token"],
+            type="password" if st.session_state.get("hide_token", True) else "default"
+        )
+    with c6:
+        if st.form_submit_button("👁", use_container_width=True, key="eye_token"):
+            st.session_state["hide_token"] = not st.session_state.get("hide_token", True)
+
+    submitted = st.form_submit_button("Use these credentials", type="primary")
     
     st.session_state["aws"] = {
         "aws_access_key_id": access_key,
@@ -538,6 +557,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
