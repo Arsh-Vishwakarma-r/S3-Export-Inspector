@@ -26,17 +26,20 @@ with st.sidebar.form("aws_form"):
         value=default_creds["aws_access_key_id"],
         type="password"  # 👈 Hide Access Key
     )
+
     secret_key = st.text_input(
         "Secret Access Key",
         value=default_creds["aws_secret_access_key"],
         type="password"  # 👈 Already hidden
     )
-    session_token = st.text_area(
+
+    session_token = st.text_input(
         "Session Token",
         value=default_creds["aws_session_token"],
-        type="password"  # 👈 Hide Session Token too
+        type="password"  # 👈 Works here, text_area not allowed
     )
-    submitted = st.form_submit_button("Use these credentials")    
+
+    submitted = st.form_submit_button("Use these credentials")
     st.session_state["aws"] = {
         "aws_access_key_id": access_key,
         "aws_secret_access_key": secret_key,
@@ -533,6 +536,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
