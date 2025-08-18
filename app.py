@@ -22,9 +22,30 @@ default_creds = {
 # Sidebar for user credentials
 st.sidebar.header("🔑 AWS Credentials")
 with st.sidebar.form("aws_form"):
-    access_key = st.text_input("Access Key ID", value=default_creds["aws_access_key_id"])
-    secret_key = st.text_input("Secret Access Key", type="password", value=default_creds["aws_secret_access_key"])
-    session_token = st.text_area("Session Token", value=default_creds["aws_session_token"])
+    # Toggle for Access Key
+    show_access = st.checkbox("👁 Show Access Key ID")
+    access_key = st.text_input(
+        "Access Key ID",
+        value=default_creds["aws_access_key_id"],
+        type="default" if show_access else "password"
+    )
+
+    # Toggle for Secret Key
+    show_secret = st.checkbox("👁 Show Secret Access Key")
+    secret_key = st.text_input(
+        "Secret Access Key",
+        value=default_creds["aws_secret_access_key"],
+        type="default" if show_secret else "password"
+    )
+
+    # Toggle for Session Token
+    show_token = st.checkbox("👁 Show Session Token")
+    session_token = st.text_area(
+        "Session Token",
+        value=default_creds["aws_session_token"],
+        type="default" if show_token else "password"
+    )
+
     submitted = st.form_submit_button("Use these credentials")
 
 if submitted:
@@ -524,6 +545,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
