@@ -440,20 +440,56 @@ if st.session_state.show_results and s3_path_input:
             ascending = st.session_state.filters["ascending"]
             filtered_df = filtered_df.sort_values(by=sort_column, ascending=ascending)
 
-            rows_per_page = st.session_state.filters["rows_per_page"]
-            total_rows = len(filtered_df)
+            # --- Hybrid Pagination with Page Size Selector ---
+            page_size_options = [10, 20, 50, 100]
+            items_per_page = st.selectbox("Rows per page:", page_size_options, index=1)
 
+            total_rows = len(filtered_df)
             if total_rows == 0:
                 st.warning("⚠️ No matching frames.")
                 st.stop()
 
-            total_pages = (total_rows - 1) // rows_per_page + 1
-            page = st.slider("📄 Page", 1, total_pages, st.session_state.filters["current_page"]) if total_pages > 1 else 1
-            st.session_state.filters["current_page"] = page
+            total_pages = max(1, (total_rows + items_per_page - 1) // items_per_page)
 
-            start = (page - 1) * rows_per_page
-            end = page * rows_per_page
+            # Keep current page in session state
+            if "current_page" not in st.session_state:
+                st.session_state.current_page = 1
+
+            # Ensure current_page doesn’t exceed new total
+            if st.session_state.current_page > total_pages:
+                st.session_state.current_page = total_pages
+
+            # --- Page Navigation Controls ---
+            col1, col2, col3 = st.columns([1, 2, 1])
+
+            with col1:
+                if st.button("⬅️ Prev") and st.session_state.current_page > 1:
+                    st.session_state.current_page -= 1
+
+            with col2:
+                page = st.selectbox(
+                    "Jump to page:",
+                    options=list(range(1, total_pages + 1)),
+                    index=st.session_state.current_page - 1,
+                    key="page_select",
+                )
+                st.session_state.current_page = page
+
+            with col3:
+                if st.button("Next ➡️") and st.session_state.current_page < total_pages:
+                    st.session_state.current_page += 1
+
+            # --- Slice DataFrame for Current Page ---
+            start = (st.session_state.current_page - 1) * items_per_page
+            end = start + items_per_page
             paginated_df = filtered_df.iloc[start:end]
+
+            # Show summary
+            st.caption(
+                f"📄 Page {st.session_state.current_page} of {total_pages} "
+                f"— showing rows {start+1}–{min(end, total_rows)} of {total_rows}"
+            )
+
             # Align all headers and text to the left
             def style_table(df):
                 return df.style.set_table_styles(
@@ -536,6 +572,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
