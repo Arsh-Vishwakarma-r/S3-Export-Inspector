@@ -9,24 +9,6 @@ from concurrent.futures import ThreadPoolExecutor
 import plotly.graph_objects as go
 import base64
 
-st.set_page_config(page_title="S3 Export Inspector", layout="wide")
-
-# Sidebar for AWS credentials
-st.sidebar.header("AWS Credentials")
-aws_access_key = st.sidebar.text_input("AWS Access Key ID")
-aws_secret_key = st.sidebar.text_input("AWS Secret Access Key", type="password")
-aws_region = st.sidebar.text_input("AWS Region", value="us-east-1")
-
-if aws_access_key and aws_secret_key:
-    session = boto3.Session(
-        aws_access_key_id=aws_access_key,
-        aws_secret_access_key=aws_secret_key,
-        region_name=aws_region
-    )
-    s3 = session.client("s3")
-else:
-    st.warning("Please enter AWS credentials in the sidebar.")
-
 @st.cache_resource
 def create_sso_session(profile_name=None):
     return boto3.Session(
@@ -497,6 +479,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
