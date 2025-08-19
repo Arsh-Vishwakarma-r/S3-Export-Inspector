@@ -198,22 +198,31 @@ def read_impact_sum(_s3_client, bucket, key):
 @st.cache_data(show_spinner=False)
 def read_user_s3_path(_s3_client, bucket, timestamp_prefix):
     """
-    Reads report.json for a given timestamp folder and extracts the base User S3 Path.
-    Looks for an inputPath ending with 'demographics/' and strips that part,
-    keeping the version folder (e.g. .../r32/).
+    Return the base user S3 folder (e.g., .../r32/) by reading report.json
+    inside the given timestamp folder. If an inputPath ends with 'demographics[/]',
+    strip that segment.
     """
     import json
     try:
-        report_key = timestamp_prefix.rstrip("/") + "/report.json"
+        report_key = timestamp_prefix.strip("/") + "/report.json"
         response = _s3_client.get_object(Bucket=bucket, Key=report_key)
         data = json.loads(response["Body"].read().decode("utf-8"))
 
         input_paths = data.get("inputPaths", [])
         if isinstance(input_paths, list):
             for path in input_paths:
-                if path.rstrip("/").endswith("demographics"):
-                    # only strip the last segment ("demographics")
-                    return path.rsplit("/", 1)[0] + "/"
+                if not isinstance(path, str):
+                    continue
+                cleaned = path.strip().replace("\\", "/").rstrip("/")  # <-- remove trailing slash first
+                if cleaned.lower().endswith("/demographics"):
+                    # strip the 'demographics' segment and re-add a single slash
+                    return cleaned.rsplit("/", 1)[0] + "/"
+
+            # Fallback: normalize the first input path to a folder (without double slashes)
+            if input_paths:
+                cleaned0 = str(input_paths[0]).strip().replace("\\", "/").rstrip("/") + "/"
+                return cleaned0
+
         return "N/A"
     except Exception:
         return "N/A"
@@ -318,16 +327,12 @@ if st.session_state.show_results and s3_path_input:
                 impact_sum_fmt = round(impact_sum, 2) if isinstance(impact_sum, float) else "Error"
                 past_sum_fmt = round(past_sum, 2) if isinstance(past_sum, float) else past_sum
                 if is_new == "Yes":
-                        # remove frame type (dynamic/static) to reach timestamp folder
-                        ts_prefix = "/".join(prefix.strip("/").split("/")[:-2])
+                            ts_prefix = "/".join(prefix.strip("/").split("/")[:-2])
                 else:
-                        # remove frame type + file name for past frames
-                        past_parts = past_key.strip("/").split("/")[:-2]
-                        ts_prefix = "/".join(past_parts)
+                            past_parts = past_key.strip("/").split("/")[:-2]
+                            ts_prefix = "/".join(past_parts)
 
-                # ensure we always cut down to the timestamp folder level
-                clean_prefix = "/".join(ts_prefix.strip("/").split("/")[:6])
-                user_s3_path = read_user_s3_path(s3, bucket, clean_prefix)
+                user_s3_path = read_user_s3_path(s3, bucket, ts_prefix)
 
                 return [
                         file_name, category, is_new, impression_change,
@@ -612,6 +617,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
