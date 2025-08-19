@@ -199,7 +199,7 @@ def read_impact_sum(_s3_client, bucket, key):
 def read_user_s3_path(_s3_client, bucket, timestamp_prefix):
     """
     Reads report.json for a given timestamp folder and extracts the base User S3 Path.
-    Looks for an inputPath ending with 'demographic/' and strips that part.
+    Looks for an inputPath ending with 'demographics/' and strips that part.
     """
     import json
     try:
@@ -210,8 +210,8 @@ def read_user_s3_path(_s3_client, bucket, timestamp_prefix):
         input_paths = data.get("inputPaths", [])
         if isinstance(input_paths, list):
             for path in input_paths:
-                if path.rstrip("/").endswith("demographic"):
-                    return path.rsplit("/", 2)[0] + "/"   # drop 'demographic/'
+                if path.rstrip("/").endswith("demographics"):
+                    return path.rsplit("/", 2)[0] + "/"   # drop 'demographics/'
         return "N/A"
     except Exception:
         return "N/A"
@@ -610,3 +610,4 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
