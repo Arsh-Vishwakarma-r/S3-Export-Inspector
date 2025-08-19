@@ -325,7 +325,9 @@ if st.session_state.show_results and s3_path_input:
                         past_parts = past_key.strip("/").split("/")[:-2]
                         ts_prefix = "/".join(past_parts)
 
-                user_s3_path = read_user_s3_path(s3, bucket, ts_prefix)
+                # ensure we always cut down to the timestamp folder level
+                clean_prefix = "/".join(ts_prefix.strip("/").split("/")[:6])
+                user_s3_path = read_user_s3_path(s3, bucket, clean_prefix)
 
                 return [
                         file_name, category, is_new, impression_change,
@@ -610,6 +612,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
