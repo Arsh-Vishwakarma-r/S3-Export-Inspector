@@ -318,24 +318,22 @@ if st.session_state.show_results and s3_path_input:
                 impact_sum_fmt = round(impact_sum, 2) if isinstance(impact_sum, float) else "Error"
                 past_sum_fmt = round(past_sum, 2) if isinstance(past_sum, float) else past_sum
                 if is_new == "Yes":
-                    # current timestamp parent prefix
-                    ts_prefix = "/".join(prefix.strip("/").split("/")[:-1])
+                        # remove frame type (dynamic/static) to reach timestamp folder
+                        ts_prefix = "/".join(prefix.strip("/").split("/")[:-2])
                 else:
-                    # get past timestamp prefix from past_frames
-                    past_ts, past_key = past_frames[file_name]
-                    past_parts = past_key.strip("/").split("/")[:-1]  # remove file name
-                    ts_prefix = "/".join(past_parts)
+                        # remove frame type + file name for past frames
+                        past_parts = past_key.strip("/").split("/")[:-2]
+                        ts_prefix = "/".join(past_parts)
 
                 user_s3_path = read_user_s3_path(s3, bucket, ts_prefix)
 
-
-                
                 return [
-                    file_name, category, is_new, impression_change,
-                    impact_sum_fmt, past_sum_fmt, impact_variance_html, impact_variance_raw,
-                    f"s3://{bucket}/{current_key}" if is_new == "Yes" else f"s3://{bucket}/{past_frames[file_name][1]}",
-                    user_s3_path
+                        file_name, category, is_new, impression_change,
+                        impact_sum_fmt, past_sum_fmt, impact_variance_html, impact_variance_raw,
+                        f"s3://{bucket}/{current_key}" if is_new == "Yes" else f"s3://{bucket}/{past_frames[file_name][1]}",
+                        user_s3_path
                 ]
+
 
             with ThreadPoolExecutor() as executor:
                 rows = list(executor.map(lambda f: process_file(*f), all_files))
@@ -612,5 +610,6 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
