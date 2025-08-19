@@ -199,8 +199,7 @@ def read_impact_sum(_s3_client, bucket, key):
 def read_user_s3_path(_s3_client, bucket, timestamp_prefix):
     """
     Return the base user S3 folder (e.g., .../r32/) by reading report.json
-    inside the given timestamp folder. If an inputPath ends with 'demographics[/]',
-    strip that segment.
+    inside the given timestamp folder. Always strip trailing 'demographic[/]' or 'demographics[/]'.
     """
     import json
     try:
@@ -209,19 +208,26 @@ def read_user_s3_path(_s3_client, bucket, timestamp_prefix):
         data = json.loads(response["Body"].read().decode("utf-8"))
 
         input_paths = data.get("inputPaths", [])
-        if isinstance(input_paths, list):
+        if isinstance(input_paths, list) and input_paths:
+            # take first valid path
             for path in input_paths:
-                if not isinstance(path, str):
-                    continue
-                cleaned = path.strip().replace("\\", "/").rstrip("/")  # <-- remove trailing slash first
-                if cleaned.lower().endswith("/demographics"):
-                    # strip the 'demographics' segment and re-add a single slash
-                    return cleaned.rsplit("/", 1)[0] + "/"
+                if isinstance(path, str) and path.strip():
+                    user_path = path.strip().replace("\\", "/").rstrip("/") + "/"
+                    break
+            else:
+                return "N/A"
 
-            # Fallback: normalize the first input path to a folder (without double slashes)
-            if input_paths:
-                cleaned0 = str(input_paths[0]).strip().replace("\\", "/").rstrip("/") + "/"
-                return cleaned0
+            # final cleanup to remove demographics segment if present
+            if user_path.lower().endswith("/demographics/"):
+                user_path = user_path.rsplit("/", 2)[0] + "/"
+            elif user_path.lower().endswith("/demographics"):
+                user_path = user_path.rsplit("/", 1)[0] + "/"
+            elif user_path.lower().endswith("/demographic/"):
+                user_path = user_path.rsplit("/", 2)[0] + "/"
+            elif user_path.lower().endswith("/demographic"):
+                user_path = user_path.rsplit("/", 1)[0] + "/"
+
+            return user_path
 
         return "N/A"
     except Exception:
@@ -617,6 +623,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
