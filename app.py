@@ -8,7 +8,7 @@ from botocore.exceptions import ProfileNotFound, ClientError
 from concurrent.futures import ThreadPoolExecutor
 import plotly.graph_objects as go
 import base64
-
+import re
 import streamlit as st
 import boto3
 
@@ -202,6 +202,8 @@ def read_user_s3_path(_s3_client, bucket, timestamp_prefix):
     inside the given timestamp folder. Always strip trailing 'demographic[/]' or 'demographics[/]'.
     """
     import json
+    import re
+
     try:
         report_key = timestamp_prefix.strip("/") + "/report.json"
         response = _s3_client.get_object(Bucket=bucket, Key=report_key)
@@ -209,7 +211,7 @@ def read_user_s3_path(_s3_client, bucket, timestamp_prefix):
 
         input_paths = data.get("inputPaths", [])
         if isinstance(input_paths, list) and input_paths:
-            # take first valid path
+            # Take the first valid path
             for path in input_paths:
                 if isinstance(path, str) and path.strip():
                     user_path = path.strip().replace("\\", "/").rstrip("/") + "/"
@@ -217,16 +219,8 @@ def read_user_s3_path(_s3_client, bucket, timestamp_prefix):
             else:
                 return "N/A"
 
-            # final cleanup to remove demographics segment if present
-            if user_path.lower().endswith("/demographics/"):
-                user_path = user_path.rsplit("/", 2)[0] + "/"
-            elif user_path.lower().endswith("/demographics"):
-                user_path = user_path.rsplit("/", 1)[0] + "/"
-            elif user_path.lower().endswith("/demographic/"):
-                user_path = user_path.rsplit("/", 2)[0] + "/"
-            elif user_path.lower().endswith("/demographic"):
-                user_path = user_path.rsplit("/", 1)[0] + "/"
-
+            # Clean trailing 'demographic' or 'demographics' using regex
+            user_path = re.sub(r'/demographic[s]?/$', '/', user_path, flags=re.IGNORECASE)
             return user_path
 
         return "N/A"
@@ -623,6 +617,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
