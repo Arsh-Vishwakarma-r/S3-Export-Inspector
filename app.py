@@ -541,18 +541,88 @@ if st.session_state.show_results and s3_path_input:
                 f"— showing rows {start+1}–{min(end, total_rows)} of {total_rows}"
             )
 
-            # Align all headers and text to the left
+            # --- Improved Clean Table Styling with Tooltip + Conditional Scroll ---
             def style_table(df):
-                return df.style.set_table_styles(
-                    [{'selector': 'th', 'props': [('text-align', 'left')]},
-                     {'selector': 'td', 'props': [('text-align', 'left')]}]
+                styled = (
+                    df.style.set_table_styles(
+                        [
+                            {"selector": "th", "props": [("background-color", "#f4f4f8"),
+                                                         ("color", "#333"),
+                                                         ("font-weight", "bold"),
+                                                         ("text-align", "left"),
+                                                         ("padding", "8px"),
+                                                         ("border-bottom", "2px solid #ddd"),
+                                                         ("white-space", "nowrap")]},
+                            {"selector": "td", "props": [("text-align", "left"),
+                                                         ("padding", "8px"),
+                                                         ("border-bottom", "1px solid #eee"),
+                                                         ("white-space", "nowrap"),
+                                                         ("overflow", "hidden"),
+                                                         ("text-overflow", "ellipsis"),
+                                                         ("max-width", "220px"),
+                                                         ("cursor", "help")]},
+                            {"selector": "tbody tr:nth-child(odd)", "props": [("background-color", "#fafafa")]},
+                            {"selector": "tbody tr:hover", "props": [("background-color", "#f1f7ff")]}
+                        ]
+                    )
+                    .hide(axis="index")
                 )
+                return styled
 
-            # Show only the HTML columns (drop Impact Variance (Value))
-            st.write(
-                style_table(paginated_df.drop(columns=["Impact Variance (Value)"])).to_html(escape=False, index=False),
-                unsafe_allow_html=True
-            )
+
+            # Inject CSS for tooltips + fullscreen scroll behavior
+            st.markdown("""
+            <style>
+            /* Normal table: truncate long text */
+            div[data-testid="stMarkdownContainer"] table {
+                display: block;
+                overflow-x: hidden;
+                white-space: nowrap;
+            }
+
+            /* Fullscreen mode: allow horizontal scroll */
+            section[data-testid="stFullscreenFrame"] table {
+                overflow-x: auto !important;
+                white-space: normal !important;
+            }
+
+            /* Tooltip styling */
+            .tooltip {
+                position: relative;
+            }
+            .tooltip:hover::after {
+                content: attr(title);
+                position: absolute;
+                left: 0;
+                top: 100%;
+                white-space: normal;
+                background: #333;
+                color: #fff;
+                padding: 6px 10px;
+                border-radius: 6px;
+                font-size: 13px;
+                max-width: 400px;
+                z-index: 9999;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+
+            # Render table with tooltips
+            html_table = style_table(
+                paginated_df.drop(columns=["Impact Variance (Value)"])
+            ).to_html(escape=False)
+
+            # Add `title="full text"` attribute to each <td>
+            for col in paginated_df.columns:
+                for val in paginated_df[col]:
+                    html_table = html_table.replace(
+                        f">{val}</td>",
+                        f' title="{val}">{val}</td>'
+                    )
+
+            st.write(html_table, unsafe_allow_html=True)
+
 
             # Extract relevant parts from S3 prefix to form filename
             prefix_parts = prefix.strip("/").split("/")
@@ -623,6 +693,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
