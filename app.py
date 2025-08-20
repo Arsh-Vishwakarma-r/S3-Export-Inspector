@@ -498,6 +498,9 @@ if st.session_state.show_results and s3_path_input:
             filtered_df = filtered_df.sort_values(by=sort_column, ascending=ascending)
 
             # --- Hybrid Pagination with Page Size Selector ---
+            page_size_options = [10, 20, 50, 100]
+            items_per_page = st.selectbox("Rows per page:", page_size_options, index=1)
+
             total_rows = len(filtered_df)
             if total_rows == 0:
                 st.warning("⚠️ No matching frames.")
@@ -505,24 +508,11 @@ if st.session_state.show_results and s3_path_input:
 
             total_pages = max(1, (total_rows + items_per_page - 1) // items_per_page)
 
-            # --- Hybrid Pagination with Page Size Selector ---
-            total_rows = len(filtered_df)
-            if total_rows == 0:
-                st.warning("⚠️ No matching frames.")
-                st.stop()
-
+            # Keep current page in session state
             if "current_page" not in st.session_state:
                 st.session_state.current_page = 1
-            if "rows_per_page" not in st.session_state:
-                st.session_state.rows_per_page = 20   # default
 
-            # Always sync items_per_page
-            items_per_page = st.session_state.rows_per_page
-
-            # Calculate total pages safely
-            total_pages = max(1, (total_rows + items_per_page - 1) // items_per_page)
-
-            # Ensure current_page doesn’t exceed total_pages
+            # Ensure current_page doesn’t exceed new total
             if st.session_state.current_page > total_pages:
                 st.session_state.current_page = total_pages
 
@@ -588,19 +578,19 @@ if st.session_state.show_results and s3_path_input:
                 st.session_state.current_page = page
 
             with toolbar[3]:
-                st.session_state.rows_per_page = st.selectbox(
+                items_per_page = st.selectbox(
                     "",
                     [10, 20, 50, 100],
-                    index=[10, 20, 50, 100].index(st.session_state.rows_per_page),
-                    key="rows_per_page_select",
+                    index=1,
+                    key="rows_per_page",
                     label_visibility="collapsed",
                 )
-                items_per_page = st.session_state.rows_per_page
 
             with toolbar[4]:
                 if st.button("➡️", key="next_btn", help="Next Page"):
                     if st.session_state.current_page < total_pages:
                         st.session_state.current_page += 1
+            
 
             
             st.markdown('</div>', unsafe_allow_html=True)
@@ -691,6 +681,3 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
-
-
-
