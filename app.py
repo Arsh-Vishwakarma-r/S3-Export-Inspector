@@ -196,7 +196,6 @@ def read_impact_sum(_s3_client, bucket, key):
     except Exception:
         return "Error"
 @st.cache_data(show_spinner=False)
-@st.cache_data(show_spinner=False)
 def read_user_s3_path(_s3_client, bucket, timestamp_prefix):
     """
     Return the base user S3 folder (e.g., .../r32/) by reading report.json
@@ -206,7 +205,6 @@ def read_user_s3_path(_s3_client, bucket, timestamp_prefix):
     import re
 
     try:
-        # report.json lives in the timestamp folder
         report_key = timestamp_prefix.strip("/") + "/report.json"
         response = _s3_client.get_object(Bucket=bucket, Key=report_key)
         data = json.loads(response["Body"].read().decode("utf-8"))
@@ -222,7 +220,7 @@ def read_user_s3_path(_s3_client, bucket, timestamp_prefix):
                 return "N/A"
 
             # Clean trailing 'demographic' or 'demographics' using regex
-            user_path = re.sub(r'/demographic[s]?/?$', '/', user_path, flags=re.IGNORECASE)
+            user_path = re.sub(r'/demographic[s]?/$', '/', user_path, flags=re.IGNORECASE)
             return user_path
 
         return "N/A"
@@ -277,75 +275,71 @@ if st.session_state.show_results and s3_path_input:
             timestamp_parent_prefix = "/".join(prefix.strip("/").split("/")[:-1])
             user_s3_path = read_user_s3_path(s3, bucket, timestamp_parent_prefix)
             def process_file(file_name, category):
-                        current_key = frame_file_map.get(file_name)
-                        is_new = "No" if file_name in past_frames else "Yes"
-                        impact_sum = read_impact_sum(s3, bucket, current_key)
-                        impact_delta = "N/A"
+                current_key = frame_file_map.get(file_name)
+                is_new = "No" if file_name in past_frames else "Yes"
+                impact_sum = read_impact_sum(s3, bucket, current_key)
+                impact_delta = "N/A"
+                impression_change = "Yes"
+                past_sum = "N/A"
+
+                if is_new == "No":
+                    past_folder, past_key = past_frames[file_name]
+                    past_sum = read_impact_sum(s3, bucket, past_key)
+                    if isinstance(impact_sum, str) or isinstance(past_sum, str):
+                        impression_change = "Error"
+                        impact_delta = "Error"
+                    else:
+                        impact_delta_val = impact_sum - past_sum
+                        impression_change = "Yes" if abs(impact_delta_val) > 1e-5 else "No"
+                        impact_delta = round(impact_delta_val, 2)
+                else:
+                    if isinstance(impact_sum, str):
+                        impression_change = "Error"
+                        impact_delta = "Error"
+                    else:
                         impression_change = "Yes"
-                        past_sum = "N/A"
+                        impact_delta = round(impact_sum, 2)
 
-                        # Determine timestamp folder of this frame
-                        if is_new == "Yes":
-                                    ts_prefix = "/".join(current_key.strip("/").split("/")[:-2])
-                        else:
-                                    past_parts = past_frames[file_name][1].strip("/").split("/")[:-2]
-                                    ts_prefix = "/".join(past_parts)
+                if is_new == "Yes" and isinstance(impact_sum, (int, float)) and not isinstance(impact_sum, bool):
+                    arrow = "🔼"
+                    color = "green"
+                    impact_variance_html = f"<span style='color:{color}'>{round(impact_sum, 2)} {arrow}</span>"
+                    impact_variance_raw = impact_sum
+                elif isinstance(impact_delta, (int, float)):
+                    if impact_delta > 0:
+                        arrow = "🔼"
+                        color = "green"
+                        impact_variance_html = f"<span style='color:{color}'>{impact_delta} {arrow}</span>"
+                    elif impact_delta < 0:
+                        arrow = "🔽"
+                        color = "red"
+                        impact_variance_html = f"<span style='color:{color}'>{impact_delta} {arrow}</span>"
+                    else:
+                        impact_variance_html = f"<span style='color:black'>{impact_delta}</span>"
+                    impact_variance_raw = impact_delta
+                elif impact_delta in ["N/A", "Error"]:
+                    impact_variance_html = f"<span style='color:blue'>{impact_delta}</span>"
+                    impact_variance_raw = impact_delta
+                else:
+                    impact_variance_html = str(impact_delta)
+                    impact_variance_raw = impact_delta
 
-                        # Read User S3 path from report.json in the same timestamp folder
-                        user_s3_path = read_user_s3_path(s3, bucket, ts_prefix)
+                impact_sum_fmt = round(impact_sum, 2) if isinstance(impact_sum, float) else "Error"
+                past_sum_fmt = round(past_sum, 2) if isinstance(past_sum, float) else past_sum
+                if is_new == "Yes":
+                            ts_prefix = "/".join(prefix.strip("/").split("/")[:-2])
+                else:
+                            past_parts = past_key.strip("/").split("/")[:-2]
+                            ts_prefix = "/".join(past_parts)
 
-                        if is_new == "No":
-                                    past_folder, past_key = past_frames[file_name]
-                                    past_sum = read_impact_sum(s3, bucket, past_key)
-                                    if isinstance(impact_sum, str) or isinstance(past_sum, str):
-                                                impression_change = "Error"
-                                                impact_delta = "Error"
-                                    else:
-                                                impact_delta_val = impact_sum - past_sum
-                                                impression_change = "Yes" if abs(impact_delta_val) > 1e-5 else "No"
-                                                impact_delta = round(impact_delta_val, 2)
-                        else:
-                                    if isinstance(impact_sum, str):
-                                                impression_change = "Error"
-                                                impact_delta = "Error"
-                                    else:
-                                                impression_change = "Yes"
-                                                impact_delta = round(impact_sum, 2)
+                user_s3_path = read_user_s3_path(s3, bucket, ts_prefix)
 
-                        # Format impact variance for display
-                        if is_new == "Yes" and isinstance(impact_sum, (int, float)) and not isinstance(impact_sum, bool):
-                                    arrow = "🔼"
-                                    color = "green"
-                                    impact_variance_html = f"<span style='color:{color}'>{round(impact_sum, 2)} {arrow}</span>"
-                                    impact_variance_raw = impact_sum
-                        elif isinstance(impact_delta, (int, float)):
-                                    if impact_delta > 0:
-                                                arrow = "🔼"
-                                                color = "green"
-                                                impact_variance_html = f"<span style='color:{color}'>{impact_delta} {arrow}</span>"
-                                    elif impact_delta < 0:
-                                                arrow = "🔽"
-                                                color = "red"
-                                                impact_variance_html = f"<span style='color:{color}'>{impact_delta} {arrow}</span>"
-                                    else:
-                                                impact_variance_html = f"<span style='color:black'>{impact_delta}</span>"
-                                    impact_variance_raw = impact_delta
-                        elif impact_delta in ["N/A", "Error"]:
-                                    impact_variance_html = f"<span style='color:blue'>{impact_delta}</span>"
-                                    impact_variance_raw = impact_delta
-                        else:
-                                    impact_variance_html = str(impact_delta)
-                                    impact_variance_raw = impact_delta
-
-                        impact_sum_fmt = round(impact_sum, 2) if isinstance(impact_sum, float) else "Error"
-                        past_sum_fmt = round(past_sum, 2) if isinstance(past_sum, float) else past_sum
-
-                        return [
-                                    file_name, category, is_new, impression_change,
-                                    impact_sum_fmt, past_sum_fmt, impact_variance_html, impact_variance_raw,
-                                    f"s3://{bucket}/{current_key}" if is_new == "Yes" else f"s3://{bucket}/{past_frames[file_name][1]}",
-                                    user_s3_path
-                        ]
+                return [
+                        file_name, category, is_new, impression_change,
+                        impact_sum_fmt, past_sum_fmt, impact_variance_html, impact_variance_raw,
+                        f"s3://{bucket}/{current_key}" if is_new == "Yes" else f"s3://{bucket}/{past_frames[file_name][1]}",
+                        user_s3_path
+                ]
 
 
             with ThreadPoolExecutor() as executor:
@@ -623,10 +617,3 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
-
-
-
-
-
-
-
