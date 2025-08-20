@@ -497,9 +497,6 @@ if st.session_state.show_results and s3_path_input:
             ascending = st.session_state.filters["ascending"]
             filtered_df = filtered_df.sort_values(by=sort_column, ascending=ascending)
 
-            # --- Hybrid Pagination with Page Size Selector ---
-            page_size_options = [10, 20, 50, 100]
-            items_per_page = st.selectbox("Rows per page:", page_size_options, index=1)
 
             total_rows = len(filtered_df)
             if total_rows == 0:
@@ -681,3 +678,4 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
