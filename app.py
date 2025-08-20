@@ -599,12 +599,6 @@ if st.session_state.show_results and s3_path_input:
             end = start + items_per_page
             paginated_df = filtered_df.iloc[start:end]
 
-            # Show summary
-            st.caption(
-                f"📄 Page {st.session_state.current_page} of {total_pages} "
-                f"— showing rows {start+1}–{min(end, total_rows)} of {total_rows}"
-            )
-
             # Align all headers and text to the left
             def style_table(df):
                 return df.style.set_table_styles(
@@ -687,3 +681,4 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
