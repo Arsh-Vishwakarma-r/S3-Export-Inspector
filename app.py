@@ -271,11 +271,10 @@ if st.session_state.show_results and s3_path_input:
             session = create_sso_session(profile_input)
             s3 = session.client('s3')
 
-            # Extract the parent folder of the current timestamp to locate report.json
-            timestamp_parent_prefix = "/".join(prefix.strip("/").split("/")[:-1])
-            user_s3_path = read_user_s3_path(s3, bucket, timestamp_parent_prefix)
-            # Extract the parent folder of the current timestamp to locate report.json
-            timestamp_parent_prefix = "/".join(prefix.strip("/").split("/")[:-1])
+            # Correct parent folder for report.json
+            prefix_parts = prefix.strip("/").split("/")
+            timestamp_folder = prefix_parts[-2]  # second last segment is the timestamp
+            timestamp_parent_prefix = "/".join(prefix_parts[:-1])  # include timestamp folder
             user_s3_path = read_user_s3_path(s3, bucket, timestamp_parent_prefix)
 
             def process_file(file_name, category):
@@ -622,4 +621,5 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
