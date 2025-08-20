@@ -516,82 +516,66 @@ if st.session_state.show_results and s3_path_input:
             if st.session_state.current_page > total_pages:
                 st.session_state.current_page = total_pages
 
-            # --- Custom CSS for compact controls + centering ---
-            st.markdown("""
-                <style>
-                div[data-testid="stHorizontalBlock"] {
-                    justify-content: center !important;   /* Center toolbar */
-                    align-items: center;
-                }
-                div[data-testid="stButton"] > button.small-btn {
-                    padding: 0.25rem 0.6rem;
-                    font-size: 0.85rem;
-                    background-color: #f0f2f6;
-                    color: #333;
-                    border: 1px solid #d3d3d3;
-                    border-radius: 6px;
-                }
-                div[data-testid="stButton"] > button.small-btn:hover {
-                    background-color: #e0e0e0;
-                    color: black;
-                }
-                /* Make selectboxes compact */
-                div[data-baseweb="select"] {
-                    min-height: 28px !important;
-                    font-size: 0.85rem !important;
-                }
-                div[data-baseweb="select"] > div {
-                    padding-top: 0 !important;
-                    padding-bottom: 0 !important;
-                    min-height: 28px !important;
-                }
-                </style>
-            """, unsafe_allow_html=True)
-
-            # --- Compact Button Styling (applied globally once) ---
+            # --- Centered Inline Pagination Controls ---
             st.markdown(
                 """
                 <style>
-                    div.stButton > button:first-child {
-                        height: 36px !important;
-                        padding: 0 10px !important;
-                        font-size: 14px !important;
-                        border-radius: 6px !important;
-                    }
+                .pagination-bar {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 1rem;
+                }
+                .pagination-bar div[data-baseweb="select"] {
+                    max-width: 90px;
+                }
                 </style>
                 """,
                 unsafe_allow_html=True,
             )
 
-            # --- Toolbar Layout ---
-            toolbar = st.columns([1, 2, 2, 2, 1])
+            # Wrap controls inside a horizontal flex container
+            st.markdown('<div class="pagination-bar">', unsafe_allow_html=True)
 
-            with toolbar[0]:
-                if st.button("⬅️ Prev") and st.session_state.current_page > 1:
-                    st.session_state.current_page -= 1
+            # Prev button
+            if st.button("⬅️ Prev") and st.session_state.current_page > 1:
+                st.session_state.current_page -= 1
 
-            with toolbar[1]:
-                st.markdown(
-                    f"<div style='text-align:center; font-weight:bold;'>Page {st.session_state.current_page} of {total_pages} — showing rows {start_idx+1}-{min(end_idx, total_rows)} of {total_rows}</div>",
-                    unsafe_allow_html=True,
-                )
+            # Page select
+            page = st.selectbox(
+                "Page",
+                options=list(range(1, total_pages + 1)),
+                index=st.session_state.current_page - 1,
+                key="page_select",
+                label_visibility="collapsed",
+            )
+            st.session_state.current_page = page
 
-            with toolbar[2]:
-                page = st.selectbox(
-                    "",
-                    options=list(range(1, total_pages + 1)),
-                    index=st.session_state.current_page - 1,
-                    key="page_select",
-                )
-                st.session_state.current_page = page
+            # Status text
+            start_row = (st.session_state.current_page - 1) * items_per_page + 1
+            end_row = min(st.session_state.current_page * items_per_page, total_rows)
+            st.markdown(
+                f"<div style='font-weight:bold; padding-top:6px;'>"
+                f"Page {st.session_state.current_page} of {total_pages} "
+                f"— rows {start_row}-{end_row} of {total_rows}"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
 
-            with toolbar[3]:
-                items_per_page = st.selectbox("", [10, 20, 50, 100], index=1, key="rows_per_page")
+            # Rows per page select
+            st.selectbox(
+                "Rows per page:",
+                page_size_options,
+                index=page_size_options.index(items_per_page),
+                key="rows_per_page",
+                label_visibility="collapsed",
+            )
 
-            with toolbar[4]:
-                if st.button("Next ➡️") and st.session_state.current_page < total_pages:
-                    st.session_state.current_page += 1            
+            # Next button
+            if st.button("Next ➡️") and st.session_state.current_page < total_pages:
+                st.session_state.current_page += 1
 
+            st.markdown('</div>', unsafe_allow_html=True)
             
             st.markdown('</div>', unsafe_allow_html=True)
             # --- Slice DataFrame for Current Page ---
@@ -687,6 +671,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
