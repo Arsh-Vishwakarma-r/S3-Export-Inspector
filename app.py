@@ -454,48 +454,74 @@ if st.session_state.show_results and s3_path_input:
                 st.markdown(f"<div class='stat-card'><div class='stat-title'>🕒 Past Unique Frames</div><div class='stat-value'>{len(past_frames)}</div></div>", unsafe_allow_html=True)
 
 
-            # Ensure defaults exist
-            if "selected_new" not in st.session_state:
-                st.session_state.selected_new = ["Yes", "No"]
-            if "selected_change" not in st.session_state:
-                st.session_state.selected_change = ["Yes", "No", "Error"]
-            if "frame_search" not in st.session_state:
-                st.session_state.frame_search = ""
+        # --- Filter Section ---
+        st.subheader("🔎 Filters")
 
-            st.subheader("🔎 Filters")
-            cols = st.columns(3)
-            with cols[0]:
-                st.multiselect(
-                    "Is New Frame?",
-                    ["Yes", "No"],
-                    default=st.session_state.selected_new,
-                    key="selected_new"
-                )
-            with cols[1]:
-                st.multiselect(
-                    "Impression Change?",
-                    ["Yes", "No", "Error"],
-                    default=st.session_state.selected_change,
-                    key="selected_change"
-                )
-            with cols[2]:
-                st.text_input(
-                    "🔍 Search Frame ID",
-                    value=st.session_state.frame_search,
-                    key="frame_search"
-                )
+        st.markdown(
+            """
+            <style>
+            .filter-bar {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 2rem;
+                margin-bottom: 1rem;
+            }
+            .filter-bar label {
+                font-weight: bold;
+                margin-right: 0.5rem;
+            }
+            div[data-baseweb="select"] {
+                min-width: 150px;
+                max-width: 180px;
+            }
+            .stTextInput input {
+                min-width: 180px;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
 
-            # Apply filters instantly
-            filtered_df = df_result[
-                df_result["Is New Frame?"].isin(st.session_state.selected_new) &
-                df_result["Impression Change?"].isin(st.session_state.selected_change) &
-                df_result["Frame Id"].str.contains(st.session_state.frame_search, case=False)
-            ]
+        st.markdown('<div class="filter-bar">', unsafe_allow_html=True)
 
+        col1, col2, col3 = st.columns([1, 1, 1.2])
 
-            sort_column = st.session_state.filters["sort_column"]
-            ascending = st.session_state.filters["ascending"]
-            filtered_df = filtered_df.sort_values(by=sort_column, ascending=ascending)
+        with col1:
+            st.multiselect(
+                "Is New Frame?",
+                ["Yes", "No"],
+                default=st.session_state.selected_new,
+                key="selected_new"
+            )
+
+        with col2:
+            st.multiselect(
+                "Impression Change?",
+                ["Yes", "No", "Error"],
+                default=st.session_state.selected_change,
+                key="selected_change"
+            )
+
+        with col3:
+            st.text_input(
+                "🔍 Search Frame ID",
+                value=st.session_state.frame_search,
+                key="frame_search"
+            )
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # --- Apply filters instantly ---
+        filtered_df = df_result[
+            df_result["Is New Frame?"].isin(st.session_state.selected_new) &
+            df_result["Impression Change?"].isin(st.session_state.selected_change) &
+            df_result["Frame Id"].str.contains(st.session_state.frame_search, case=False)
+        ]
+
+        sort_column = st.session_state.filters["sort_column"]
+        ascending = st.session_state.filters["ascending"]
+        filtered_df = filtered_df.sort_values(by=sort_column, ascending=ascending)
 
             # --- Hybrid Pagination with Page Size Selector ---
             page_size_options = [10, 20, 50, 100]
@@ -681,4 +707,5 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
