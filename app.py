@@ -440,19 +440,48 @@ if st.session_state.show_results and s3_path_input:
                 unsafe_allow_html=True
             )
 
-            st.subheader("📌 Frame Summary Stats")
+        st.markdown(
+            """
+            <style>
+            .stat-card {
+                background: white;
+                border: 1px solid #e0e0e0;
+                border-radius: 12px;
+                padding: 20px;
+                text-align: center;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                height: 120px; /* 🔑 fixed equal height */
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+            .stat-title {
+                font-size: clamp(12px, 1.2vw, 16px); /* 🔑 auto-resize text */
+                font-weight: 600;
+                margin-bottom: 8px;
+                white-space: nowrap;
+            }
+            .stat-value {
+                font-size: clamp(16px, 2vw, 24px); /* 🔑 auto-resize value */
+                font-weight: bold;
+                color: #333;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
 
-            metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+        st.subheader("📌 Frame Summary Stats")
+        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
 
-            with metric_col1:
-                st.markdown(f"<div class='stat-card'><div class='stat-title'>📦 Total Frames in Current Path</div><div class='stat-value'>{len(all_files)}</div></div>", unsafe_allow_html=True)
-            with metric_col2:
-                st.markdown(f"<div class='stat-card'><div class='stat-title'>⚡ Dynamic Frames</div><div class='stat-value'>{dynamic_count}</div></div>", unsafe_allow_html=True)
-            with metric_col3:
-                st.markdown(f"<div class='stat-card'><div class='stat-title'>📂 Static Frames</div><div class='stat-value'>{static_count}</div></div>", unsafe_allow_html=True)
-            with metric_col4:
-                st.markdown(f"<div class='stat-card'><div class='stat-title'>🕒 Past Unique Frames</div><div class='stat-value'>{len(past_frames)}</div></div>", unsafe_allow_html=True)
-
+        with metric_col1:
+            st.markdown(f"<div class='stat-card'><div class='stat-title'>📦 Total Frames in Current Path</div><div class='stat-value'>{len(all_files)}</div></div>", unsafe_allow_html=True)
+        with metric_col2:
+            st.markdown(f"<div class='stat-card'><div class='stat-title'>⚡ Dynamic Frames</div><div class='stat-value'>{dynamic_count}</div></div>", unsafe_allow_html=True)
+        with metric_col3:
+            st.markdown(f"<div class='stat-card'><div class='stat-title'>📂 Static Frames</div><div class='stat-value'>{static_count}</div></div>", unsafe_allow_html=True)
+        with metric_col4:
+            st.markdown(f"<div class='stat-card'><div class='stat-title'>🕒 Past Unique Frames</div><div class='stat-value'>{len(past_frames)}</div></div>", unsafe_allow_html=True)
 
             # Ensure defaults exist
             if "selected_new" not in st.session_state:
@@ -672,4 +701,5 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
