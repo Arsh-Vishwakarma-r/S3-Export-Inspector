@@ -515,37 +515,82 @@ if st.session_state.show_results and s3_path_input:
             # Ensure current_page doesn’t exceed new total
             if st.session_state.current_page > total_pages:
                 st.session_state.current_page = total_pages
-            # --- Page Navigation Controls (all in one line) ---
+
+            # --- Custom CSS for compact controls + centering ---
             st.markdown("""
                 <style>
-                .pagination-container {
-                    display: flex;
-                    justify-content: center;
+                div[data-testid="stHorizontalBlock"] {
+                    justify-content: center !important;   /* Center toolbar */
                     align-items: center;
-                    gap: 1rem;
-                    margin-top: 0.5rem;
-                    margin-bottom: 0.5rem;
+                }
+                div[data-testid="stButton"] > button.small-btn {
+                    padding: 0.25rem 0.6rem;
+                    font-size: 0.85rem;
+                    background-color: #f0f2f6;
+                    color: #333;
+                    border: 1px solid #d3d3d3;
+                    border-radius: 6px;
+                }
+                div[data-testid="stButton"] > button.small-btn:hover {
+                    background-color: #e0e0e0;
+                    color: black;
+                }
+                /* Make selectboxes compact */
+                div[data-baseweb="select"] {
+                    min-height: 28px !important;
+                    font-size: 0.85rem !important;
+                }
+                div[data-baseweb="select"] > div {
+                    padding-top: 0 !important;
+                    padding-bottom: 0 !important;
+                    min-height: 28px !important;
                 }
                 </style>
             """, unsafe_allow_html=True)
 
-            st.markdown('<div class="pagination-container">', unsafe_allow_html=True)
+            # --- Centered Compact Pagination Toolbar ---
+            toolbar = st.columns([1, 2, 2, 2, 1], gap="small")
 
-            if st.button("⬅️ Prev") and st.session_state.current_page > 1:
-                st.session_state.current_page -= 1
+            with toolbar[0]:
+                if st.button("⬅️", key="prev_btn", help="Previous Page"):
+                    if st.session_state.current_page > 1:
+                        st.session_state.current_page -= 1
 
-            page = st.selectbox(
-                "Jump to page:",
-                options=list(range(1, total_pages + 1)),
-                index=st.session_state.current_page - 1,
-                key="page_select",
-                label_visibility="collapsed"
-            )
-            st.session_state.current_page = page
+            with toolbar[1]:
+                st.markdown(
+                    f"<div style='text-align:center; font-weight:bold; padding-top:6px;'>"
+                    f"Page {st.session_state.current_page} of {total_pages}"
+                    f"</div>",
+                    unsafe_allow_html=True,
+                )
 
-            if st.button("Next ➡️") and st.session_state.current_page < total_pages:
-                st.session_state.current_page += 1
+            with toolbar[2]:
+                page = st.selectbox(
+                    "",
+                    options=list(range(1, total_pages + 1)),
+                    index=st.session_state.current_page - 1,
+                    key="page_select",
+                    label_visibility="collapsed",
+                )
+                st.session_state.current_page = page
 
+            with toolbar[3]:
+                items_per_page = st.selectbox(
+                    "",
+                    [10, 20, 50, 100],
+                    index=1,
+                    key="rows_per_page",
+                    label_visibility="collapsed",
+                )
+
+            with toolbar[4]:
+                if st.button("➡️", key="next_btn", help="Next Page"):
+                    if st.session_state.current_page < total_pages:
+                        st.session_state.current_page += 1
+
+            
+
+            
             st.markdown('</div>', unsafe_allow_html=True)
             # --- Slice DataFrame for Current Page ---
             start = (st.session_state.current_page - 1) * items_per_page
@@ -640,6 +685,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
