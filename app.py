@@ -454,74 +454,100 @@ if st.session_state.show_results and s3_path_input:
                 st.markdown(f"<div class='stat-card'><div class='stat-title'>🕒 Past Unique Frames</div><div class='stat-value'>{len(past_frames)}</div></div>", unsafe_allow_html=True)
 
 
-            # --- Filter Section ---
+            # Ensure defaults exist
+            if "selected_new" not in st.session_state:
+                st.session_state.selected_new = ["Yes", "No"]
+            if "selected_change" not in st.session_state:
+                st.session_state.selected_change = ["Yes", "No", "Error"]
+            if "frame_search" not in st.session_state:
+                st.session_state.frame_search = ""
+
             st.subheader("🔎 Filters")
-
-            st.markdown(
-                """
-                <style>
-                .filter-bar {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    gap: 2rem;
-                    margin-bottom: 1rem;
-                }
-                .filter-bar label {
-                    font-weight: bold;
-                    margin-right: 0.5rem;
-                }
-                div[data-baseweb="select"] {
-                    min-width: 150px;
-                    max-width: 180px;
-                }
-                .stTextInput input {
-                    min-width: 180px;
-                }
-                </style>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            st.markdown('<div class="filter-bar">', unsafe_allow_html=True)
-
-            col1, col2, col3 = st.columns([1, 1, 1.2])
-
-            with col1:
+            cols = st.columns(3)
+            with cols[0]:
                 st.multiselect(
                     "Is New Frame?",
                     ["Yes", "No"],
                     default=st.session_state.selected_new,
                     key="selected_new"
                 )
-
-            with col2:
+            with cols[1]:
                 st.multiselect(
                     "Impression Change?",
                     ["Yes", "No", "Error"],
                     default=st.session_state.selected_change,
                     key="selected_change"
                 )
-
-            with col3:
+            with cols[2]:
                 st.text_input(
                     "🔍 Search Frame ID",
                     value=st.session_state.frame_search,
                     key="frame_search"
                 )
 
-            st.markdown('</div>', unsafe_allow_html=True)
-
-            # --- Apply filters instantly ---
+            # Apply filters instantly
             filtered_df = df_result[
                 df_result["Is New Frame?"].isin(st.session_state.selected_new) &
                 df_result["Impression Change?"].isin(st.session_state.selected_change) &
                 df_result["Frame Id"].str.contains(st.session_state.frame_search, case=False)
             ]
 
+
             sort_column = st.session_state.filters["sort_column"]
             ascending = st.session_state.filters["ascending"]
             filtered_df = filtered_df.sort_values(by=sort_column, ascending=ascending)
+
+            # --- Hybrid Pagination with Page Size Selector ---
+            page_size_options = [10, 20, 50, 100]
+            items_per_page = st.selectbox("Rows per page:", page_size_options, index=1)
+
+            total_rows = len(filtered_df)
+            if total_rows == 0:
+                st.warning("⚠️ No matching frames.")
+                st.stop()
+
+            total_pages = max(1, (total_rows + items_per_page - 1) // items_per_page)
+
+            # Keep current page in session state
+            if "current_page" not in st.session_state:
+                st.session_state.current_page = 1
+
+            # Ensure current_page doesn’t exceed new total
+            if st.session_state.current_page > total_pages:
+                st.session_state.current_page = total_pages
+
+            # --- Custom CSS for compact controls + centering ---
+            st.markdown("""
+                <style>
+                div[data-testid="stHorizontalBlock"] {
+                    justify-content: center !important;   /* Center toolbar */
+                    align-items: center;
+                }
+                div[data-testid="stButton"] > button.small-btn {
+                    padding: 0.25rem 0.6rem;
+                    font-size: 0.85rem;
+                    background-color: #f0f2f6;
+                    color: #333;
+                    border: 1px solid #d3d3d3;
+                    border-radius: 6px;
+                }
+                div[data-testid="stButton"] > button.small-btn:hover {
+                    background-color: #e0e0e0;
+                    color: black;
+                }
+                /* Make selectboxes compact */
+                div[data-baseweb="select"] {
+                    min-height: 28px !important;
+                    font-size: 0.85rem !important;
+                }
+                div[data-baseweb="select"] > div {
+                    padding-top: 0 !important;
+                    padding-bottom: 0 !important;
+                    min-height: 28px !important;
+                }
+                </style>
+            """, unsafe_allow_html=True)
+
             # --- Centered Compact Pagination Toolbar with inline status ---
             toolbar = st.columns([1, 5, 2, 2, 1], gap="small")
 
@@ -655,6 +681,3 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
-
-
-
