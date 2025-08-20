@@ -1,3 +1,4 @@
+
 import pandas as pd
 import streamlit as st
 from streamlit.components.v1 import html
@@ -440,53 +441,19 @@ if st.session_state.show_results and s3_path_input:
                 unsafe_allow_html=True
             )
 
-        st.markdown(
-            """
-            <style>
-            .stat-card {
-                background: white;
-                border: 1px solid #e0e0e0;
-                border-radius: 12px;
-                padding: 20px;
-                text-align: center;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                height: 120px;          /* equal height for all cards */
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-            }
-            .stat-title {
-                font-size: 14px;        /* fixed stable size */
-                font-weight: 600;
-                margin-bottom: 6px;
-                text-align: center;
-                white-space: nowrap;    /* keep single line */
-                overflow: hidden;       /* hide overflow */
-                text-overflow: ellipsis; /* add "..." */
-                width: 100%;            /* force to fit card */
-            }
-            .stat-value {
-                font-size: 22px;        /* nice bold number */
-                font-weight: bold;
-                color: #333;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
+            st.subheader("📌 Frame Summary Stats")
 
-        st.subheader("📌 Frame Summary Stats")
-        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+            metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
 
-        with metric_col1:
-            st.markdown(f"<div class='stat-card'><div class='stat-title'>📦 Total Frames in Current Path</div><div class='stat-value'>{len(all_files)}</div></div>", unsafe_allow_html=True)
-        with metric_col2:
-            st.markdown(f"<div class='stat-card'><div class='stat-title'>⚡ Dynamic Frames</div><div class='stat-value'>{dynamic_count}</div></div>", unsafe_allow_html=True)
-        with metric_col3:
-            st.markdown(f"<div class='stat-card'><div class='stat-title'>📂 Static Frames</div><div class='stat-value'>{static_count}</div></div>", unsafe_allow_html=True)
-        with metric_col4:
-            st.markdown(f"<div class='stat-card'><div class='stat-title'>🕒 Past Unique Frames</div><div class='stat-value'>{len(past_frames)}</div></div>", unsafe_allow_html=True)
+            with metric_col1:
+                st.markdown(f"<div class='stat-card'><div class='stat-title'>📦 Total Frames in Current Path</div><div class='stat-value'>{len(all_files)}</div></div>", unsafe_allow_html=True)
+            with metric_col2:
+                st.markdown(f"<div class='stat-card'><div class='stat-title'>⚡ Dynamic Frames</div><div class='stat-value'>{dynamic_count}</div></div>", unsafe_allow_html=True)
+            with metric_col3:
+                st.markdown(f"<div class='stat-card'><div class='stat-title'>📂 Static Frames</div><div class='stat-value'>{static_count}</div></div>", unsafe_allow_html=True)
+            with metric_col4:
+                st.markdown(f"<div class='stat-card'><div class='stat-title'>🕒 Past Unique Frames</div><div class='stat-value'>{len(past_frames)}</div></div>", unsafe_allow_html=True)
+
 
             # Ensure defaults exist
             if "selected_new" not in st.session_state:
@@ -706,7 +673,4 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
-
-
-
 
