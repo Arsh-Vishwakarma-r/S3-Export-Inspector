@@ -450,32 +450,24 @@ if st.session_state.show_results and s3_path_input:
                 padding: 20px;
                 text-align: center;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                height: 120px; /* equal height */
+                height: 120px;          /* equal height for all cards */
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
             }
             .stat-title {
-                font-size: 16px;
+                font-size: 14px;        /* fixed stable size */
                 font-weight: 600;
-                margin-bottom: 8px;
-                max-width: 95%;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis; /* cut neatly */
-            }
-            .stat-title:hover {
-                overflow: visible;
-                white-space: normal;   /* show full on hover */
-                background: #f9f9f9;
-                padding: 2px 6px;
-                border-radius: 6px;
-                position: absolute;
-                z-index: 10;
+                margin-bottom: 6px;
+                text-align: center;
+                white-space: nowrap;    /* keep single line */
+                overflow: hidden;       /* hide overflow */
+                text-overflow: ellipsis; /* add "..." */
+                width: 100%;            /* force to fit card */
             }
             .stat-value {
-                font-size: 24px;
+                font-size: 22px;        /* nice bold number */
                 font-weight: bold;
                 color: #333;
             }
@@ -714,6 +706,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
