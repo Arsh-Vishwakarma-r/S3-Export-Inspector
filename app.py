@@ -276,19 +276,6 @@ if st.session_state.show_results and s3_path_input:
             timestamp_folder = prefix_parts[-2]  # second last segment is the timestamp
             timestamp_parent_prefix = "/".join(prefix_parts[:-1])  # include timestamp folder
             user_s3_path = read_user_s3_path(s3, bucket, timestamp_parent_prefix)
-
-            def get_timestamp_folder_prefix(s3_file_path):
-                        """
-                        Given S3 path to a file, return the folder prefix containing the timestamp folder.
-                        E.g., s3://bucket/.../20250819132318/dynamic/file.csv.bz2
-                        -> bucket, prefix to timestamp folder (with trailing slash)
-                        """
-                        parts = s3_file_path.replace("s3://", "").split("/")
-                        bucket = parts[0]
-                        # keep everything up to timestamp folder (second last folder)
-                        prefix = "/".join(parts[1:-2+1]) + "/"  # include timestamp folder
-                        return bucket, prefix
-
             def process_file(file_name, category):
                         current_key = frame_file_map.get(file_name)
                         is_new = "No" if file_name in past_frames else "Yes"
@@ -342,9 +329,11 @@ if st.session_state.show_results and s3_path_input:
                         impact_sum_fmt = round(impact_sum, 2) if isinstance(impact_sum, float) else "Error"
                         past_sum_fmt = round(past_sum, 2) if isinstance(past_sum, float) else past_sum
 
-                        # Compute User S3 Path from report.json in timestamp folder
-                        bucket_for_user_path, timestamp_prefix = get_timestamp_folder_prefix(f"s3://{bucket}/{current_key}")
-                        user_s3_path = read_user_s3_path(s3, bucket_for_user_path, timestamp_prefix)
+                        # --- FIX: Extract timestamp folder from current S3 key ---
+                        key_parts = current_key.strip("/").split("/")
+                        timestamp_folder = key_parts[-2]  # second last segment is timestamp
+                        timestamp_prefix = "/".join(key_parts[:-1])  # up to timestamp folder
+                        user_s3_path = read_user_s3_path(s3, bucket, timestamp_prefix)
 
                         # S3 File Path always points to the current key
                         s3_file_path = f"s3://{bucket}/{current_key}"
@@ -361,6 +350,7 @@ if st.session_state.show_results and s3_path_input:
                                     s3_file_path,
                                     user_s3_path
                         ]
+
 
             # --- Execute in ThreadPoolExecutor ---
             with ThreadPoolExecutor() as executor:
@@ -637,6 +627,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
