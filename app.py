@@ -497,26 +497,17 @@ if st.session_state.show_results and s3_path_input:
             ascending = st.session_state.filters["ascending"]
             filtered_df = filtered_df.sort_values(by=sort_column, ascending=ascending)
 
-            # --- Hybrid Pagination with Page Size Selector ---
-            page_size_options = [10, 20, 50, 100]
-            items_per_page = st.selectbox("Rows per page:", page_size_options, index=1)
-
+            # --- Pagination Setup ---
             total_rows = len(filtered_df)
             if total_rows == 0:
                 st.warning("⚠️ No matching frames.")
                 st.stop()
 
-            total_pages = max(1, (total_rows + items_per_page - 1) // items_per_page)
-
             # Keep current page in session state
             if "current_page" not in st.session_state:
                 st.session_state.current_page = 1
 
-            # Ensure current_page doesn’t exceed new total
-            if st.session_state.current_page > total_pages:
-                st.session_state.current_page = total_pages
-
-            # --- Custom CSS for compact controls + centering ---
+            # --- Compact Pagination Toolbar ---
             st.markdown("""
                 <style>
                 div[data-testid="stHorizontalBlock"] {
@@ -548,7 +539,7 @@ if st.session_state.show_results and s3_path_input:
                 </style>
             """, unsafe_allow_html=True)
 
-            # --- Centered Compact Pagination Toolbar with inline status ---
+            # --- Toolbar Layout ---
             toolbar = st.columns([1, 5, 2, 2, 1], gap="small")
 
             with toolbar[0]:
@@ -557,8 +548,10 @@ if st.session_state.show_results and s3_path_input:
                         st.session_state.current_page -= 1
 
             with toolbar[1]:
-                start_row = (st.session_state.current_page - 1) * items_per_page + 1
-                end_row = min(st.session_state.current_page * items_per_page, total_rows)
+                # Show status
+                start_row = (st.session_state.current_page - 1) * st.session_state.filters["rows_per_page"] + 1
+                end_row = min(st.session_state.current_page * st.session_state.filters["rows_per_page"], total_rows)
+                total_pages = max(1, (total_rows + st.session_state.filters["rows_per_page"] - 1) // st.session_state.filters["rows_per_page"])
                 st.markdown(
                     f"<div style='text-align:center; font-weight:bold; padding-top:6px;'>"
                     f"Page {st.session_state.current_page} of {total_pages} "
@@ -578,25 +571,23 @@ if st.session_state.show_results and s3_path_input:
                 st.session_state.current_page = page
 
             with toolbar[3]:
-                items_per_page = st.selectbox(
+                rows_per_page = st.selectbox(
                     "",
                     [10, 20, 50, 100],
                     index=1,
                     key="rows_per_page",
                     label_visibility="collapsed",
                 )
+                st.session_state.filters["rows_per_page"] = rows_per_page
 
             with toolbar[4]:
                 if st.button("➡️", key="next_btn", help="Next Page"):
                     if st.session_state.current_page < total_pages:
                         st.session_state.current_page += 1
-            
 
-            
-            st.markdown('</div>', unsafe_allow_html=True)
-            # --- Slice DataFrame for Current Page ---
-            start = (st.session_state.current_page - 1) * items_per_page
-            end = start + items_per_page
+            # --- Slice DataFrame ---
+            start = (st.session_state.current_page - 1) * st.session_state.filters["rows_per_page"]
+            end = start + st.session_state.filters["rows_per_page"]
             paginated_df = filtered_df.iloc[start:end]
 
             # Align all headers and text to the left
@@ -681,3 +672,4 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
