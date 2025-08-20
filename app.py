@@ -497,29 +497,58 @@ if st.session_state.show_results and s3_path_input:
             ascending = st.session_state.filters["ascending"]
             filtered_df = filtered_df.sort_values(by=sort_column, ascending=ascending)
 
-            # --- Hybrid Pagination ---
+            # --- Hybrid Pagination with Page Size Selector ---
             total_rows = len(filtered_df)
             if total_rows == 0:
                 st.warning("⚠️ No matching frames.")
                 st.stop()
 
-            # Default rows per page if not already set
-            if "rows_per_page" not in st.session_state:
-                st.session_state.rows_per_page = 20
-
-            items_per_page = st.session_state.rows_per_page
             total_pages = max(1, (total_rows + items_per_page - 1) // items_per_page)
 
             # Keep current page in session state
             if "current_page" not in st.session_state:
                 st.session_state.current_page = 1
+            if "rows_per_page" not in st.session_state:
+                st.session_state.rows_per_page = 20   # default
 
             # Ensure current_page doesn’t exceed new total
             if st.session_state.current_page > total_pages:
                 st.session_state.current_page = total_pages
 
-            # --- Centered Pagination Toolbar (no CSS needed) ---
-            toolbar = st.columns([1, 3, 2, 2, 1], gap="small")
+            # --- Custom CSS for compact controls + centering ---
+            st.markdown("""
+                <style>
+                div[data-testid="stHorizontalBlock"] {
+                    justify-content: center !important;   /* Center toolbar */
+                    align-items: center;
+                }
+                div[data-testid="stButton"] > button.small-btn {
+                    padding: 0.25rem 0.6rem;
+                    font-size: 0.85rem;
+                    background-color: #f0f2f6;
+                    color: #333;
+                    border: 1px solid #d3d3d3;
+                    border-radius: 6px;
+                }
+                div[data-testid="stButton"] > button.small-btn:hover {
+                    background-color: #e0e0e0;
+                    color: black;
+                }
+                /* Make selectboxes compact */
+                div[data-baseweb="select"] {
+                    min-height: 28px !important;
+                    font-size: 0.85rem !important;
+                }
+                div[data-baseweb="select"] > div {
+                    padding-top: 0 !important;
+                    padding-bottom: 0 !important;
+                    min-height: 28px !important;
+                }
+                </style>
+            """, unsafe_allow_html=True)
+
+            # --- Centered Compact Pagination Toolbar with inline status ---
+            toolbar = st.columns([1, 5, 2, 2, 1], gap="small")
 
             with toolbar[0]:
                 if st.button("⬅️", key="prev_btn", help="Previous Page"):
@@ -527,8 +556,8 @@ if st.session_state.show_results and s3_path_input:
                         st.session_state.current_page -= 1
 
             with toolbar[1]:
-                start_row = (st.session_state.current_page - 1) * items_per_page + 1
-                end_row = min(st.session_state.current_page * items_per_page, total_rows)
+                start_row = (st.session_state.current_page - 1) * st.session_state.rows_per_page + 1
+                end_row = min(st.session_state.current_page * st.session_state.rows_per_page, total_rows)
                 st.markdown(
                     f"<div style='text-align:center; font-weight:bold; padding-top:6px;'>"
                     f"Page {st.session_state.current_page} of {total_pages} "
@@ -548,10 +577,10 @@ if st.session_state.show_results and s3_path_input:
                 st.session_state.current_page = page
 
             with toolbar[3]:
-                st.session_state.rows_per_page = st.selectbox(
+                st.selectbox(
                     "",
                     [10, 20, 50, 100],
-                    index=[10, 20, 50, 100].index(items_per_page),
+                    index=[10, 20, 50, 100].index(st.session_state.rows_per_page),
                     key="rows_per_page",
                     label_visibility="collapsed",
                 )
@@ -560,6 +589,10 @@ if st.session_state.show_results and s3_path_input:
                 if st.button("➡️", key="next_btn", help="Next Page"):
                     if st.session_state.current_page < total_pages:
                         st.session_state.current_page += 1
+
+            # Update items_per_page from session state
+            items_per_page = st.session_state.rows_per_page
+
             
             st.markdown('</div>', unsafe_allow_html=True)
             # --- Slice DataFrame for Current Page ---
@@ -649,4 +682,5 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
