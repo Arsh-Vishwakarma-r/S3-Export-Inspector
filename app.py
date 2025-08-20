@@ -515,27 +515,38 @@ if st.session_state.show_results and s3_path_input:
             # Ensure current_page doesn’t exceed new total
             if st.session_state.current_page > total_pages:
                 st.session_state.current_page = total_pages
+            # --- Page Navigation Controls (all in one line) ---
+            st.markdown("""
+                <style>
+                .pagination-container {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 1rem;
+                    margin-top: 0.5rem;
+                    margin-bottom: 0.5rem;
+                }
+                </style>
+            """, unsafe_allow_html=True)
 
-            # --- Page Navigation Controls ---
-            col1, col2, col3 = st.columns([1, 2, 1])
+            st.markdown('<div class="pagination-container">', unsafe_allow_html=True)
 
-            with col1:
-                if st.button("⬅️ Prev") and st.session_state.current_page > 1:
-                    st.session_state.current_page -= 1
+            if st.button("⬅️ Prev") and st.session_state.current_page > 1:
+                st.session_state.current_page -= 1
 
-            with col2:
-                page = st.selectbox(
-                    "Jump to page:",
-                    options=list(range(1, total_pages + 1)),
-                    index=st.session_state.current_page - 1,
-                    key="page_select",
-                )
-                st.session_state.current_page = page
+            page = st.selectbox(
+                "Jump to page:",
+                options=list(range(1, total_pages + 1)),
+                index=st.session_state.current_page - 1,
+                key="page_select",
+                label_visibility="collapsed"
+            )
+            st.session_state.current_page = page
 
-            with col3:
-                if st.button("Next ➡️") and st.session_state.current_page < total_pages:
-                    st.session_state.current_page += 1
+            if st.button("Next ➡️") and st.session_state.current_page < total_pages:
+                st.session_state.current_page += 1
 
+            st.markdown('</div>', unsafe_allow_html=True)
             # --- Slice DataFrame for Current Page ---
             start = (st.session_state.current_page - 1) * items_per_page
             end = start + items_per_page
@@ -629,6 +640,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
