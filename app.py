@@ -66,11 +66,17 @@ s3 = boto3.client(
 
 @st.cache_resource
 def create_sso_session(profile_name=None):
+    if "aws" in st.session_state:
+        creds = st.session_state["aws"]
+    else:
+        creds = default_creds
+
     return boto3.Session(
-        aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
-        aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
-        aws_session_token=os.environ.get("AWS_SESSION_TOKEN")
+        aws_access_key_id=creds["aws_access_key_id"],
+        aws_secret_access_key=creds["aws_secret_access_key"],
+        aws_session_token=creds["aws_session_token"]
     )
+
 
 @st.cache_data(show_spinner=False)
 def list_files_and_history(s3_path, profile_name):
@@ -673,4 +679,5 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
