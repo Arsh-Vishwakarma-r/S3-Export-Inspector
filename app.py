@@ -434,6 +434,7 @@ if st.session_state.show_results and s3_path_input:
                 """,
                 unsafe_allow_html=True
             )
+
             st.subheader("📌 Frame Summary Stats")
 
             metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
@@ -446,6 +447,7 @@ if st.session_state.show_results and s3_path_input:
                 st.markdown(f"<div class='stat-card'><div class='stat-title'>📂 Static Frames</div><div class='stat-value'>{static_count}</div></div>", unsafe_allow_html=True)
             with metric_col4:
                 st.markdown(f"<div class='stat-card'><div class='stat-title'>🕒 Past Unique Frames</div><div class='stat-value'>{len(past_frames)}</div></div>", unsafe_allow_html=True)
+
 
             # Ensure defaults exist
             if "selected_new" not in st.session_state:
@@ -665,9 +667,6 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
-
-
-
 
 
 
