@@ -1,14 +1,17 @@
-import pandas as pd 
+
+import pandas as pd
 import streamlit as st
 from streamlit.components.v1 import html
 import boto3
 import os
 import io
-from botocore.exceptions import ClientError
+from botocore.exceptions import ProfileNotFound, ClientError
 from concurrent.futures import ThreadPoolExecutor
 import plotly.graph_objects as go
 import base64
 import re
+import streamlit as st
+import boto3
 
 # Load default from Secrets Manager
 default_creds = {
@@ -54,14 +57,15 @@ else:
     
 # Initialize boto3 client
 s3 = boto3.client(
-    "s3", region_name='eu-west-1', config=boto3.session.Config(signature_version='s3v4'),
+    "s3",
     aws_access_key_id=creds["aws_access_key_id"],
     aws_secret_access_key=creds["aws_secret_access_key"],
     aws_session_token=creds["aws_session_token"]
 )
 
+
 @st.cache_resource
-def create_sso_session():
+def create_sso_session(profile_name=None):
     if "aws" in st.session_state:
         creds = st.session_state["aws"]
     else:
@@ -73,8 +77,9 @@ def create_sso_session():
         aws_session_token=creds["aws_session_token"]
     )
 
+
 @st.cache_data(show_spinner=False)
-def list_files_and_history(s3_path):
+def list_files_and_history(s3_path, profile_name):
     if not s3_path.startswith("s3://"):
         return None
 
@@ -85,7 +90,7 @@ def list_files_and_history(s3_path):
     if len(folders) < 2:
         return None
 
-    session = create_sso_session()
+    session = create_sso_session(profile_name)
     if not session:
         return None
 
@@ -98,7 +103,7 @@ def list_files_and_history(s3_path):
     dynamic_count, static_count = 0, 0
 
     try:
-        # 1) gather current files
+        # 1) gather current files (under the provided prefix)
         paginator = s3.get_paginator('list_objects_v2')
         current_page = paginator.paginate(Bucket=bucket_name, Prefix=prefix)
 
@@ -119,7 +124,7 @@ def list_files_and_history(s3_path):
                 frame_file_map[file_base] = key
                 current_files.append((file_base, category))
 
-        # 2) look for past sibling folders but exclude current
+        # 2) look for past sibling folders but ensure we DO NOT collect files from the current timestamp
         result_iterator = paginator.paginate(Bucket=bucket_name, Prefix=base_prefix, Delimiter='/')
         version_folders = [cp['Prefix'] for r in result_iterator for cp in r.get('CommonPrefixes', [])]
 
@@ -135,6 +140,7 @@ def list_files_and_history(s3_path):
                 timestamp_paths = [cp['Prefix'] for r in timestamp_iterator for cp in r.get('CommonPrefixes', [])]
 
                 for timestamp_path in timestamp_paths:
+                    # Skip the whole subtree if it contains the current timestamp
                     if current_ts in timestamp_path.rstrip('/').split('/'):
                         continue
 
@@ -145,6 +151,7 @@ def list_files_and_history(s3_path):
                             file_name = os.path.basename(key)
                             frame_id = file_name.replace('.csv.bz2', '').replace('.csv', '')
 
+                            # Try to extract the timestamp for this file by locating 'dynamic'/'static' and taking the prior segment
                             segs = key.strip('/').split('/')
                             past_ts = None
                             for i, seg in enumerate(segs):
@@ -153,11 +160,13 @@ def list_files_and_history(s3_path):
                                         past_ts = segs[i - 1]
                                     break
                             if past_ts is None and len(segs) >= 3:
-                                past_ts = segs[-3]
+                                past_ts = segs[-3]  # fallback
 
+                            # Safety: skip if this file belongs to the current timestamp
                             if past_ts == current_ts:
                                 continue
 
+                            # Only accept past timestamps older than current (if numeric)
                             try:
                                 past_ts_int = int(past_ts)
                                 current_ts_int = int(current_ts)
@@ -166,6 +175,7 @@ def list_files_and_history(s3_path):
                             except Exception:
                                 past_ts_int = None
 
+                            # Store the most recent (largest) past timestamp for a given frame_id
                             if frame_id not in past_frames:
                                 past_frames[frame_id] = (past_ts, key)
                             else:
@@ -225,9 +235,11 @@ def read_user_s3_path(_s3_client, bucket, timestamp_prefix):
         return "N/A"
 
 st.title("🔍 S3 Export Inspector")#🅅🄸🄾🄾🄷
-col1 = st.columns(1)[0]
+col1, col2 = st.columns(2)
 with col1:
     s3_path_input = st.text_input("📁 Enter S3 Path:", "")
+with col2:
+    profile_input = st.text_input("🔑 AWS Profile (optional):", "")
 
 if 'filters' not in st.session_state:
     st.session_state.filters = {
@@ -258,17 +270,13 @@ if st.button("🚀 Give me Details"):
 # Show results if flag is set
 if st.session_state.show_results and s3_path_input:
     with st.spinner("Fetching and analyzing S3 data..."):
-        result = list_files_and_history(s3_path_input)
+        result = list_files_and_history(s3_path_input, profile_input)
         if result is None:
             st.warning("⚠️ No valid files found.")
         else:
             all_files, dynamic_count, static_count, bucket, prefix, past_frames, frame_file_map = result
-            session = create_sso_session()
-            s3 = session.client(
-                's3',
-                region_name='eu-west-1',
-                config=boto3.session.Config(signature_version='s3v4')
-            )
+            session = create_sso_session(profile_input)
+            s3 = session.client('s3')
 
             # Correct parent folder for report.json
             prefix_parts = prefix.strip("/").split("/")
@@ -671,12 +679,4 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
-
-
-
-
-
-
-
-
 
