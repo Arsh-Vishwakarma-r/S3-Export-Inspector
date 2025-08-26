@@ -225,11 +225,9 @@ def read_user_s3_path(_s3_client, bucket, timestamp_prefix):
         return "N/A"
 
 st.title("🔍 S3 Export Inspector")#🅅🄸🄾🄾🄷
-col1, col2 = st.columns(2)
+col1 = st.columns(1)[0]
 with col1:
     s3_path_input = st.text_input("📁 Enter S3 Path:", "")
-with col2:
-    profile_input = st.text_input("🔑 AWS Profile (optional):", "")
 
 if 'filters' not in st.session_state:
     st.session_state.filters = {
@@ -669,6 +667,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
