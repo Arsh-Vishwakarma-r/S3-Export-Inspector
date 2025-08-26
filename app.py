@@ -54,7 +54,7 @@ else:
     
 # Initialize boto3 client
 s3 = boto3.client(
-    "s3", region_name='eu-west-1',
+    "s3", region_name='eu-west-1', config=boto3.session.Config(signature_version='s3v4'),
     aws_access_key_id=creds["aws_access_key_id"],
     aws_secret_access_key=creds["aws_secret_access_key"],
     aws_session_token=creds["aws_session_token"]
@@ -667,6 +667,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
