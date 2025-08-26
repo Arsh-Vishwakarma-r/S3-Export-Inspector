@@ -436,46 +436,6 @@ if st.session_state.show_results and s3_path_input:
             )
             st.subheader("📌 Frame Summary Stats")
 
-            # Create 4 equal columns
-            metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-
-            card_style = """
-                <div style="
-                    border:1px solid #ddd; 
-                    border-radius:10px; 
-                    padding:20px; 
-                    height:160px; 
-                    text-align:center; 
-                    background-color:white;
-                    box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
-                ">
-                    {content}
-                </div>
-            """
-
-            with metric_col1:
-                st.markdown(card_style.format(
-                    content=f"📦 <br><b>Total Frames in Current Path</b><br><h2>{len(all_current_frames)}</h2>"
-                ), unsafe_allow_html=True)
-
-            with metric_col2:
-                st.markdown(card_style.format(
-                    content=f"⚡ <br><b>Dynamic Frames</b><br><h2>{dynamic_count}</h2>"
-                ), unsafe_allow_html=True)
-
-            with metric_col3:
-                st.markdown(card_style.format(
-                    content=f"📁 <br><b>Static Frames</b><br><h2>{static_count}</h2>"
-                ), unsafe_allow_html=True)
-
-            with metric_col4:
-                st.markdown(card_style.format(
-                    content=f"⏰ <br><b>Past Unique Frames</b><br><h2>{len(past_unique_frames)}</h2>"
-                ), unsafe_allow_html=True)
-            
-"""
-            st.subheader("📌 Frame Summary Stats")
-
             metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
 
             with metric_col1:
@@ -486,7 +446,6 @@ if st.session_state.show_results and s3_path_input:
                 st.markdown(f"<div class='stat-card'><div class='stat-title'>📂 Static Frames</div><div class='stat-value'>{static_count}</div></div>", unsafe_allow_html=True)
             with metric_col4:
                 st.markdown(f"<div class='stat-card'><div class='stat-title'>🕒 Past Unique Frames</div><div class='stat-value'>{len(past_frames)}</div></div>", unsafe_allow_html=True)
-"""
 
             # Ensure defaults exist
             if "selected_new" not in st.session_state:
@@ -706,6 +665,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
