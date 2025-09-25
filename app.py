@@ -386,22 +386,23 @@ if st.session_state.show_results and s3_path_input:
 
                 <style>
                     #bean-container {{
-                        position: absolute;
-                        top: 80px;   /* adjust relative to your button */
-                        left: 750px; /* adjust to align beside button */
-                        width: 80px;
-                        height: 150px;
-                        z-index: 9999;
+                        display: inline-block;
+                        margin-left: 20px;
+                        vertical-align: middle;
                     }}
 
                     #bean {{
-                        width: 100%;
-                        height: 100%;
+                        width: 80px;
+                        height: 150px;
                         background-image: url('data:image/png;base64,{bean_base64}');
                         background-size: contain;
                         background-repeat: no-repeat;
                         animation: float 4s ease-in-out infinite;
                         transition: transform 0.2s ease-out;
+                    }}
+
+                    #bean:hover {{
+                        transform: rotate(10deg) scale(1.1) translateY(-5px);
                     }}
 
                     @keyframes float {{
@@ -410,29 +411,8 @@ if st.session_state.show_results and s3_path_input:
                         100% {{ transform: translateY(0px); }}
                     }}
                 </style>
-
-                <script>
-                    const bean = document.getElementById('bean');
-                    const maxTilt = 15;
-                    const maxShift = 10;
-
-                    document.addEventListener('mousemove', (e) => {{
-                        const centerX = window.innerWidth / 2;
-                        const centerY = window.innerHeight / 2;
-
-                        const offsetX = (e.clientX - centerX) / centerX;
-                        const offsetY = (e.clientY - centerY) / centerY;
-
-                        const rotateDeg = offsetX * maxTilt;
-                        const moveX = offsetX * maxShift;
-                        const moveY = offsetY * maxShift;
-
-                        bean.style.transform =
-                            `translate(${{moveX}}px, ${{moveY}}px) rotate(${{rotateDeg}}deg) scale(1.05)`;
-                    }});
-                </script>
                 """,
-                height=250,
+                height=200,
             )
 
             st.success("✅ Done analyzing!")
@@ -702,6 +682,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
