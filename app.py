@@ -381,18 +381,25 @@ if st.session_state.show_results and s3_path_input:
             st.markdown(
                 f"""
                 <style>
-                    #bean {{
+                    /* Wrapper floats up/down */
+                    #bean-wrapper {{
                         position: absolute;
                         top: -70px;
                         left: 1350px;
                         width: 80px;
                         height: 150px;
+                        z-index: 9999;
+                        animation: float 4s ease-in-out infinite;
+                    }}
+
+                    /* Actual image inside wrapper */
+                    #bean {{
+                        width: 100%;
+                        height: 100%;
                         background-image: url('data:image/png;base64,{bean_base64}');
                         background-size: contain;
                         background-repeat: no-repeat;
-                        z-index: 9999;
                         transition: transform 0.2s ease-out;
-                        animation: float 4s ease-in-out infinite; /* idle floating animation */
                     }}
 
                     @keyframes float {{
@@ -402,7 +409,9 @@ if st.session_state.show_results and s3_path_input:
                     }}
                 </style>
 
-                <div id="bean"></div>
+                <div id="bean-wrapper">
+                    <div id="bean"></div>
+                </div>
 
                 <script>
                     const bean = document.getElementById('bean');
@@ -421,7 +430,7 @@ if st.session_state.show_results and s3_path_input:
                         const moveY = offsetY * maxShift;
 
                         bean.style.transform =
-                            `translate(${{moveX}}px, ${{moveY - 8}}px) rotate(${{rotateDeg}}deg)`;
+                            `translate(${{moveX}}px, ${{moveY}}px) rotate(${{rotateDeg}}deg)`;
                     }});
                 </script>
                 """,
@@ -694,6 +703,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
