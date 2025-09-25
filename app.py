@@ -381,7 +381,7 @@ if st.session_state.show_results and s3_path_input:
             st.markdown(
                 f"""
                 <style>
-                    /* Wrapper floats up/down */
+                    /* Wrapper floats up/down (only translateY) */
                     #bean-wrapper {{
                         position: absolute;
                         top: -70px;
@@ -399,7 +399,8 @@ if st.session_state.show_results and s3_path_input:
                         background-image: url('data:image/png;base64,{bean_base64}');
                         background-size: contain;
                         background-repeat: no-repeat;
-                        transition: transform 0.2s ease-out;
+                        will-change: transform;
+                        transition: transform 0.1s ease-out;
                     }}
 
                     @keyframes float {{
@@ -415,8 +416,8 @@ if st.session_state.show_results and s3_path_input:
 
                 <script>
                     const bean = document.getElementById('bean');
-                    const maxTilt = 10;  // degrees
-                    const maxShift = 5;  // pixels
+                    const maxTilt = 15;  // degrees
+                    const maxShift = 10; // pixels
 
                     document.addEventListener('mousemove', (e) => {{
                         const centerX = window.innerWidth / 2;
@@ -703,6 +704,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
