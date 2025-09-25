@@ -479,19 +479,25 @@ if st.session_state.show_results and s3_path_input:
 
             st.subheader("🔍 Filters")
 
-            selected_new = st.multiselect(
-                "Is New Frame?",
-                ["Yes", "No"],
-                key="selected_new"
-            )
+            col1, col2, col3 = st.columns([1, 1, 1.5])
 
-            selected_change = st.multiselect(
-                "Impression Change?",
-                ["Yes", "No", "Error"],
-                key="selected_change"
-            )
+            with col1:
+                selected_new = st.multiselect(
+                    "Is New Frame?",
+                    ["Yes", "No"],
+                    key="selected_new"
+                )
 
-            search_id = st.text_input("🔎 Search Frame ID", key="search_id")
+            with col2:
+                selected_change = st.multiselect(
+                    "Impression Change?",
+                    ["Yes", "No", "Error"],
+                    key="selected_change"
+                )
+
+            with col3:
+                search_id = st.text_input("🔎 Search Frame ID", key="search_id")
+
 
             # Apply filters instantly
             filtered_df = df_result[
@@ -680,6 +686,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
