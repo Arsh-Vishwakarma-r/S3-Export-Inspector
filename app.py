@@ -383,7 +383,7 @@ if st.session_state.show_results and s3_path_input:
                         <style>
                             .bean-wrapper {{
                                 position: absolute;  /* moves with page scroll */
-                                top: -60px;          /* adjust vertical placement */
+                                top: -67.5px;          /* adjust vertical placement */
                                 right: 40px;         /* stick to right side of content */
                                 width: 80px;
                                 height: 150px;
@@ -690,6 +690,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
