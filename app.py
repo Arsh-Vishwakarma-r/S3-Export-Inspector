@@ -381,14 +381,20 @@ if st.session_state.show_results and s3_path_input:
             st.markdown(
                         f"""
                         <style>
-                            /* Outer wrapper floats only */
-                            #bean-wrapper {{
+                            /* Outer container keeps Bean in place */
+                            #bean-container {{
                                 position: absolute;
                                 top: -70px;
                                 left: 1350px;
                                 width: 80px;
                                 height: 150px;
                                 z-index: 9999;
+                            }}
+
+                            /* Wrapper floats only */
+                            #bean-wrapper {{
+                                width: 100%;
+                                height: 100%;
                                 animation: float 4s ease-in-out infinite;
                             }}
 
@@ -409,8 +415,10 @@ if st.session_state.show_results and s3_path_input:
                             }}
                         </style>
 
-                        <div id="bean-wrapper">
-                            <div id="bean"></div>
+                        <div id="bean-container">
+                            <div id="bean-wrapper">
+                                <div id="bean"></div>
+                            </div>
                         </div>
 
                         <script>
@@ -703,6 +711,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
