@@ -381,28 +381,21 @@ if st.session_state.show_results and s3_path_input:
             st.markdown(
                         f"""
                         <style>
-                            /* Target Streamlit's button container */
-                            div.stButton > button {{
-                                display: inline-block;
-                                vertical-align: middle;
-                                margin-right: 20px; /* space between button and bean */
-                            }}
-
                             .bean-wrapper {{
-                                display: inline-block;
+                                position: fixed;  /* stays on the right side */
+                                top: 120px;       /* adjust vertical placement */
+                                right: 40px;      /* stick to right side */
                                 width: 80px;
                                 height: 150px;
                                 perspective: 1000px;
                                 transform-style: preserve-3d;
                                 z-index: 9999;
                                 animation: float 3s ease-in-out infinite;
-                                vertical-align: middle;
                             }}
 
                             #bean {{
                                 width: 100%;
                                 height: 100%;
-                                left: 1250px;
                                 background-image: url('data:image/png;base64,{bean_base64}');
                                 background-size: contain;
                                 background-repeat: no-repeat;
@@ -697,6 +690,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
