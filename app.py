@@ -381,7 +381,6 @@ if st.session_state.show_results and s3_path_input:
             st.markdown(
                         f"""
                         <style>
-                            /* container holds position */
                             #bean-container {{
                                 position: absolute;
                                 top: -70px;
@@ -389,94 +388,36 @@ if st.session_state.show_results and s3_path_input:
                                 width: 80px;
                                 height: 150px;
                                 z-index: 9999;
-                                pointer-events: none; /* allow clicks through */
+                                pointer-events: none; /* clicks pass through */
                             }}
 
-                            /* wrapper only floats (translateY) */
-                            #bean-wrapper {{
-                                width: 100%;
-                                height: 100%;
-                                animation: float 4s ease-in-out infinite;
-                                transform-origin: center center;
-                            }}
-
-                            /* inner bean: JS will apply translate+rotate here */
                             #bean {{
                                 width: 100%;
                                 height: 100%;
                                 background-image: url('data:image/png;base64,{bean_base64}');
                                 background-size: contain;
                                 background-repeat: no-repeat;
-                                will-change: transform;
+                                animation: float 4s ease-in-out infinite;
+                                transition: transform 0.3s ease;
                                 transform-origin: center center;
-                                backface-visibility: hidden;
                             }}
 
+                            /* Float up and down */
                             @keyframes float {{
                                 0%   {{ transform: translateY(0px); }}
                                 50%  {{ transform: translateY(-8px); }}
                                 100% {{ transform: translateY(0px); }}
                             }}
+
+                            /* Tilt slightly on hover */
+                            #bean-container:hover #bean {{
+                                transform: translateY(-5px) rotate(10deg) scale(1.05);
+                            }}
                         </style>
 
                         <div id="bean-container">
-                            <div id="bean-wrapper">
-                                <div id="bean"></div>
-                            </div>
+                            <div id="bean"></div>
                         </div>
-
-                        <script>
-                            (function() {{
-                                // Poll until element exists (handles Streamlit re-renders)
-                                const pollInterval = 200;
-                                let pollId = setInterval(() => {{
-                                    const bean = document.getElementById('bean');
-                                    if (!bean) return;
-                                    clearInterval(pollId);
-
-                                    // mouse state
-                                    let mouseX = window.innerWidth / 2;
-                                    let mouseY = window.innerHeight / 2;
-                                    let ticking = false;
-                                    const maxTilt = 15;   // degrees
-                                    const maxShift = 10;  // px
-
-                                    function onMove(e) {{
-                                        mouseX = e.clientX;
-                                        mouseY = e.clientY;
-                                        if (!ticking) {{
-                                            requestAnimationFrame(updateTransform);
-                                            ticking = true;
-                                        }}
-                                    }}
-
-                                    function updateTransform() {{
-                                        const centerX = window.innerWidth / 2;
-                                        const centerY = window.innerHeight / 2;
-                                        const offsetX = (mouseX - centerX) / centerX;
-                                        const offsetY = (mouseY - centerY) / centerY;
-
-                                        const rotateDeg = offsetX * maxTilt;
-                                        const moveX = offsetX * maxShift;
-                                        const moveY = offsetY * maxShift;
-
-                                        // apply transform only on inner bean
-                                        bean.style.transform = `translate3d(${{moveX}}px, ${{moveY}}px, 0) rotate(${{rotateDeg}}deg)`;
-                                        ticking = false;
-                                    }}
-
-                                    // pointermove is good (works on touch/pointer devices too)
-                                    document.addEventListener('pointermove', onMove, {{ passive: true }});
-
-                                    // reset smoothly when pointer leaves window
-                                    document.addEventListener('pointerleave', () => {{
-                                        bean.style.transition = 'transform 0.6s ease';
-                                        bean.style.transform = 'translate3d(0px, 0px, 0) rotate(0deg)';
-                                        setTimeout(() => {{ bean.style.transition = 'transform 0.1s ease-out'; }}, 600);
-                                    }});
-                                }}, pollInterval);
-                            }})();
-                        </script>
                         """,
                         unsafe_allow_html=True
             )
@@ -748,6 +689,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
