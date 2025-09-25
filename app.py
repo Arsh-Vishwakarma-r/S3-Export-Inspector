@@ -460,7 +460,6 @@ if st.session_state.show_results and s3_path_input:
             with metric_col4:
                 st.markdown(f"<div class='stat-card'><div class='stat-title'>🕒 Past Unique Frames</div><div class='stat-value'>{len(past_frames)}</div></div>", unsafe_allow_html=True)
 
-
             # Ensure defaults exist
             if "selected_new" not in st.session_state:
                 st.session_state.selected_new = ["Yes", "No"]
@@ -469,28 +468,30 @@ if st.session_state.show_results and s3_path_input:
             if "frame_search" not in st.session_state:
                 st.session_state.frame_search = ""
 
-            st.subheader("🔎 Filters")
-            cols = st.columns(3)
-            with cols[0]:
-                st.multiselect(
-                    "Is New Frame?",
-                    ["Yes", "No"],
-                    default=st.session_state.selected_new,
-                    key="selected_new"
-                )
-            with cols[1]:
-                st.multiselect(
-                    "Impression Change?",
-                    ["Yes", "No", "Error"],
-                    default=st.session_state.selected_change,
-                    key="selected_change"
-                )
-            with cols[2]:
-                st.text_input(
-                    "🔍 Search Frame ID",
-                    value=st.session_state.frame_search,
-                    key="frame_search"
-                )
+                        if "selected_new" not in st.session_state:
+                st.session_state["selected_new"] = ["Yes"]
+
+            if "selected_change" not in st.session_state:
+                st.session_state["selected_change"] = ["Yes"]
+
+            if "search_id" not in st.session_state:
+                st.session_state["search_id"] = ""
+
+            st.subheader("🔍 Filters")
+
+            selected_new = st.multiselect(
+                "Is New Frame?",
+                ["Yes", "No"],
+                key="selected_new"
+            )
+
+            selected_change = st.multiselect(
+                "Impression Change?",
+                ["Yes", "No", "Error"],
+                key="selected_change"
+            )
+
+            search_id = st.text_input("🔎 Search Frame ID", key="search_id")
 
             # Apply filters instantly
             filtered_df = df_result[
@@ -679,4 +680,5 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
