@@ -2,6 +2,7 @@
 import pandas as pd
 import streamlit as st
 from streamlit.components.v1 import html
+st.set_page_config(layout="wide")
 import boto3
 import os
 import io
@@ -686,6 +687,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
