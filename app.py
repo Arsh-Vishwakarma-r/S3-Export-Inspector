@@ -468,7 +468,7 @@ if st.session_state.show_results and s3_path_input:
             if "frame_search" not in st.session_state:
                 st.session_state.frame_search = ""
 
-                        if "selected_new" not in st.session_state:
+            if "selected_new" not in st.session_state:
                 st.session_state["selected_new"] = ["Yes"]
 
             if "selected_change" not in st.session_state:
@@ -680,5 +680,6 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
