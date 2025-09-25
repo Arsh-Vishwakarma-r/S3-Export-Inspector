@@ -389,7 +389,7 @@ if st.session_state.show_results and s3_path_input:
                         display: inline-block;
                         margin-left: 20px;
                         vertical-align: middle;
-                        perspective: 1000px;  /* enable 3D tilt */
+                        perspective: 1000px;
                     }}
 
                     #bean {{
@@ -399,11 +399,7 @@ if st.session_state.show_results and s3_path_input:
                         background-size: contain;
                         background-repeat: no-repeat;
                         animation: float 4s ease-in-out infinite;
-                        transition: transform 0.3s ease-out;
-                    }}
-
-                    #bean-wrapper:hover #bean {{
-                        transform: rotateY(15deg) rotateX(5deg) scale(1.1) translateY(-5px);
+                        transition: transform 0.1s ease-out;
                     }}
 
                     @keyframes float {{
@@ -412,8 +408,32 @@ if st.session_state.show_results and s3_path_input:
                         100% {{ transform: translateY(0px); }}
                     }}
                 </style>
+
+                <script>
+                    const bean = document.getElementById('bean');
+                    const wrapper = document.getElementById('bean-wrapper');
+
+                    document.addEventListener('mousemove', (e) => {{
+                        const rect = wrapper.getBoundingClientRect();
+                        const centerX = rect.left + rect.width / 2;
+                        const centerY = rect.top + rect.height / 2;
+
+                        const offsetX = (e.clientX - centerX) / rect.width;
+                        const offsetY = (e.clientY - centerY) / rect.height;
+
+                        const rotateY = offsetX * 25;  // left/right tilt
+                        const rotateX = -offsetY * 15; // up/down tilt
+
+                        bean.style.transform =
+                            `rotateY(${{rotateY}}deg) rotateX(${{rotateX}}deg) scale(1.05)`;
+                    }});
+
+                    document.addEventListener('mouseleave', () => {{
+                        bean.style.transform = 'rotateY(0deg) rotateX(0deg) scale(1)';
+                    }});
+                </script>
                 """,
-                height=220,
+                height=250,
             )
 
             st.success("✅ Done analyzing!")
@@ -683,6 +703,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
