@@ -381,7 +381,7 @@ if st.session_state.show_results and s3_path_input:
             st.markdown(
                         f"""
                         <style>
-                            /* Outer container keeps Bean in place */
+                            /* container holds position */
                             #bean-container {{
                                 position: absolute;
                                 top: -70px;
@@ -389,16 +389,18 @@ if st.session_state.show_results and s3_path_input:
                                 width: 80px;
                                 height: 150px;
                                 z-index: 9999;
+                                pointer-events: none; /* allow clicks through */
                             }}
 
-                            /* Wrapper floats only */
+                            /* wrapper only floats (translateY) */
                             #bean-wrapper {{
                                 width: 100%;
                                 height: 100%;
                                 animation: float 4s ease-in-out infinite;
+                                transform-origin: center center;
                             }}
 
-                            /* Inner bean tilts only */
+                            /* inner bean: JS will apply translate+rotate here */
                             #bean {{
                                 width: 100%;
                                 height: 100%;
@@ -406,6 +408,8 @@ if st.session_state.show_results and s3_path_input:
                                 background-size: contain;
                                 background-repeat: no-repeat;
                                 will-change: transform;
+                                transform-origin: center center;
+                                backface-visibility: hidden;
                             }}
 
                             @keyframes float {{
@@ -422,28 +426,61 @@ if st.session_state.show_results and s3_path_input:
                         </div>
 
                         <script>
-                            const bean = document.getElementById('bean');
-                            const maxTilt = 15;  // degrees
-                            const maxShift = 10; // pixels
+                            (function() {{
+                                // Poll until element exists (handles Streamlit re-renders)
+                                const pollInterval = 200;
+                                let pollId = setInterval(() => {{
+                                    const bean = document.getElementById('bean');
+                                    if (!bean) return;
+                                    clearInterval(pollId);
 
-                            document.addEventListener('mousemove', (e) => {{
-                                const centerX = window.innerWidth / 2;
-                                const centerY = window.innerHeight / 2;
+                                    // mouse state
+                                    let mouseX = window.innerWidth / 2;
+                                    let mouseY = window.innerHeight / 2;
+                                    let ticking = false;
+                                    const maxTilt = 15;   // degrees
+                                    const maxShift = 10;  // px
 
-                                const offsetX = (e.clientX - centerX) / centerX;
-                                const offsetY = (e.clientY - centerY) / centerY;
+                                    function onMove(e) {{
+                                        mouseX = e.clientX;
+                                        mouseY = e.clientY;
+                                        if (!ticking) {{
+                                            requestAnimationFrame(updateTransform);
+                                            ticking = true;
+                                        }}
+                                    }}
 
-                                const rotateDeg = offsetX * maxTilt;
-                                const moveX = offsetX * maxShift;
-                                const moveY = offsetY * maxShift;
+                                    function updateTransform() {{
+                                        const centerX = window.innerWidth / 2;
+                                        const centerY = window.innerHeight / 2;
+                                        const offsetX = (mouseX - centerX) / centerX;
+                                        const offsetY = (mouseY - centerY) / centerY;
 
-                                bean.style.transform =
-                                    `translate(${{moveX}}px, ${{moveY}}px) rotate(${{rotateDeg}}deg)`;
-                            }});
+                                        const rotateDeg = offsetX * maxTilt;
+                                        const moveX = offsetX * maxShift;
+                                        const moveY = offsetY * maxShift;
+
+                                        // apply transform only on inner bean
+                                        bean.style.transform = `translate3d(${{moveX}}px, ${{moveY}}px, 0) rotate(${{rotateDeg}}deg)`;
+                                        ticking = false;
+                                    }}
+
+                                    // pointermove is good (works on touch/pointer devices too)
+                                    document.addEventListener('pointermove', onMove, {{ passive: true }});
+
+                                    // reset smoothly when pointer leaves window
+                                    document.addEventListener('pointerleave', () => {{
+                                        bean.style.transition = 'transform 0.6s ease';
+                                        bean.style.transform = 'translate3d(0px, 0px, 0) rotate(0deg)';
+                                        setTimeout(() => {{ bean.style.transition = 'transform 0.1s ease-out'; }}, 600);
+                                    }});
+                                }}, pollInterval);
+                            }})();
                         </script>
                         """,
                         unsafe_allow_html=True
             )
+
             st.success("✅ Done analyzing!")
             
             st.markdown(
@@ -711,6 +748,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
