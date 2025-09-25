@@ -388,7 +388,6 @@ if st.session_state.show_results and s3_path_input:
                                 width: 80px;
                                 height: 150px;
                                 z-index: 9999;
-                                pointer-events: none; /* clicks pass through */
                             }}
 
                             #bean {{
@@ -410,7 +409,7 @@ if st.session_state.show_results and s3_path_input:
                             }}
 
                             /* Tilt slightly on hover */
-                            #bean-container:hover #bean {{
+                            #bean:hover {{
                                 transform: translateY(-5px) rotate(10deg) scale(1.05);
                             }}
                         </style>
@@ -689,6 +688,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
