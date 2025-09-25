@@ -391,7 +391,14 @@ if st.session_state.show_results and s3_path_input:
                         background-size: contain;
                         background-repeat: no-repeat;
                         z-index: 9999;
-                        transition: transform 0.1s ease-out;
+                        transition: transform 0.2s ease-out;
+                        animation: float 4s ease-in-out infinite; /* idle floating animation */
+                    }}
+
+                    @keyframes float {{
+                        0%   {{ transform: translateY(0px); }}
+                        50%  {{ transform: translateY(-8px); }}
+                        100% {{ transform: translateY(0px); }}
                     }}
                 </style>
 
@@ -399,8 +406,8 @@ if st.session_state.show_results and s3_path_input:
 
                 <script>
                     const bean = document.getElementById('bean');
-                    const maxTilt = 10;
-                    const maxShift = 5;
+                    const maxTilt = 10;  // degrees
+                    const maxShift = 5;  // pixels
 
                     document.addEventListener('mousemove', (e) => {{
                         const centerX = window.innerWidth / 2;
@@ -414,7 +421,7 @@ if st.session_state.show_results and s3_path_input:
                         const moveY = offsetY * maxShift;
 
                         bean.style.transform =
-                            `translate(${{moveX}}px, ${{moveY}}px) rotate(${{rotateDeg}}deg)`;
+                            `translate(${{moveX}}px, ${{moveY - 8}}px) rotate(${{rotateDeg}}deg)`;
                     }});
                 </script>
                 """,
@@ -687,6 +694,7 @@ if st.session_state.show_results and s3_path_input:
                 data = df_result["Is New Frame?"].value_counts()
                 fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
                 st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
