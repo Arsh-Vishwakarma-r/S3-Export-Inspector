@@ -249,15 +249,15 @@ with tab1:
             profile_input = st.text_input("🔑 AWS Profile (optional):", "")
         
         if 'filters' not in st.session_state:
-        st.session_state.filters = {
-            "selected_new": ["Yes", "No"],
-            "selected_change": ["Yes", "No", "Error"],
-            "frame_search": "",
-            "sort_column": "Frame Id",
-            "ascending": True,
-            "current_page": 1,
-            "rows_per_page": 20
-        }
+            st.session_state.filters = {
+                "selected_new": ["Yes", "No"],
+                "selected_change": ["Yes", "No", "Error"],
+                "frame_search": "",
+                "sort_column": "Frame Id",
+                "ascending": True,
+                "current_page": 1,
+                "rows_per_page": 20
+            }
         
         def update_filters(key, value):
         st.session_state.filters[key] = value
@@ -759,6 +759,7 @@ with tab3:
     
     
     
+
 
 
 
