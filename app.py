@@ -260,19 +260,19 @@ with tab1:
             }
         
         def update_filters(key, value):
-        st.session_state.filters[key] = value
+            st.session_state.filters[key] = value
         
         # Keep track of whether results should be shown
         if "show_results" not in st.session_state:
-        st.session_state.show_results = False
+            st.session_state.show_results = False
         
         def load_data():
-        st.session_state.show_results = True
+            st.session_state.show_results = True
         
         # The button can be clicked infinite times
         if st.button("🚀 Give me Details"):
-        if s3_path_input:
-            load_data()
+            if s3_path_input:
+                load_data()
         
         # Show results if flag is set
         if st.session_state.show_results and s3_path_input:
@@ -759,6 +759,7 @@ with tab3:
     
     
     
+
 
 
 
