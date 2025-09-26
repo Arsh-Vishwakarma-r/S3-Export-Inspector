@@ -429,275 +429,275 @@ with tab1:
                             """,
                             unsafe_allow_html=True
                 )
-                st.success("✅ Done analyzing!")
-                
-                st.markdown(
-                    """
-                    <style>
-                    .stat-card {
-                        background-color: #f9f9f9;
-                        padding: 20px;
-                        border-radius: 12px;
-                        text-align: center;
-                        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-                    }
-                    .stat-title {
-                        font-size: 16px;
-                        font-weight: bold;
-                        color: #444;
-                        margin-bottom: 8px;
-                    }
-                    .stat-value {
-                        font-size: 28px;
-                        font-weight: bold;
-                        color: #222;
-                    }
-                    </style>
-                    """,
-                    unsafe_allow_html=True
-                )
-        
-                st.subheader("📌 Frame Summary Stats")
-        
-                metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-        
-                with metric_col1:
-                    st.markdown(f"<div class='stat-card'><div class='stat-title'>📦 Total Frames in Current Path</div><div class='stat-value'>{len(all_files)}</div></div>", unsafe_allow_html=True)
-                with metric_col2:
-                    st.markdown(f"<div class='stat-card'><div class='stat-title'>⚡ Dynamic Frames</div><div class='stat-value'>{dynamic_count}</div></div>", unsafe_allow_html=True)
-                with metric_col3:
-                    st.markdown(f"<div class='stat-card'><div class='stat-title'>📂 Static Frames</div><div class='stat-value'>{static_count}</div></div>", unsafe_allow_html=True)
-                with metric_col4:
-                    st.markdown(f"<div class='stat-card'><div class='stat-title'>🕒 Past Unique Frames</div><div class='stat-value'>{len(past_frames)}</div></div>", unsafe_allow_html=True)
-        
-                # Ensure defaults exist
-                if "selected_new" not in st.session_state:
-                    st.session_state.selected_new = ["Yes", "No"]
-                if "selected_change" not in st.session_state:
-                    st.session_state.selected_change = ["Yes", "No", "Error"]
-                if "frame_search" not in st.session_state:
-                    st.session_state.frame_search = ""
-        
-                if "selected_new" not in st.session_state:
-                    st.session_state["selected_new"] = ["Yes"]
-        
-                if "selected_change" not in st.session_state:
-                    st.session_state["selected_change"] = ["Yes"]
-        
-                if "search_id" not in st.session_state:
-                    st.session_state["search_id"] = ""
-        
-                st.subheader("🔍 Filters")
-        
-                col1, col2, col3 = st.columns([1, 1, 1.5])
-        
-                with col1:
-                    selected_new = st.multiselect(
-                        "Is New Frame?",
-                        ["Yes", "No"],
-                        key="selected_new"
-                    )
-        
-                with col2:
-                    selected_change = st.multiselect(
-                        "Impression Change?",
-                        ["Yes", "No", "Error"],
-                        key="selected_change"
-                    )
-        
-                with col3:
-                    search_id = st.text_input("🔎 Search Frame ID", key="search_id")
-        
-        
-                # Apply filters instantly
-                filtered_df = df_result[
-                    df_result["Is New Frame?"].isin(st.session_state.selected_new) &
-                    df_result["Impression Change?"].isin(st.session_state.selected_change) &
-                    df_result["Frame Id"].str.contains(st.session_state.frame_search, case=False)
-                ]
-        
-        
-                sort_column = st.session_state.filters["sort_column"]
-                ascending = st.session_state.filters["ascending"]
-                filtered_df = filtered_df.sort_values(by=sort_column, ascending=ascending)
-        
-                # --- Pagination Setup ---
-                total_rows = len(filtered_df)
-                if total_rows == 0:
-                    st.warning("⚠️ No matching frames.")
-                    st.stop()
-        
-                # Keep current page in session state
-                if "current_page" not in st.session_state:
-                    st.session_state.current_page = 1
-        
-                # --- Compact Pagination Toolbar ---
-                st.markdown("""
-                    <style>
-                    div[data-testid="stHorizontalBlock"] {
-                        justify-content: center !important;   /* Center toolbar */
-                        align-items: center;
-                    }
-                    div[data-testid="stButton"] > button.small-btn {
-                        padding: 0.25rem 0.6rem;
-                        font-size: 0.85rem;
-                        background-color: #f0f2f6;
-                        color: #333;
-                        border: 1px solid #d3d3d3;
-                        border-radius: 6px;
-                    }
-                    div[data-testid="stButton"] > button.small-btn:hover {
-                        background-color: #e0e0e0;
-                        color: black;
-                    }
-                    /* Make selectboxes compact */
-                    div[data-baseweb="select"] {
-                        min-height: 28px !important;
-                        font-size: 0.85rem !important;
-                    }
-                    div[data-baseweb="select"] > div {
-                        padding-top: 0 !important;
-                        padding-bottom: 0 !important;
-                        min-height: 28px !important;
-                    }
-                    </style>
-                """, unsafe_allow_html=True)
-        
-                # --- Toolbar Layout ---
-                toolbar = st.columns([1, 5, 2, 2, 1], gap="small")
-        
-                with toolbar[0]:
-                    if st.button("⬅️", key="prev_btn", help="Previous Page"):
-                        if st.session_state.current_page > 1:
-                            st.session_state.current_page -= 1
-        
-                with toolbar[1]:
-                    # Show status
-                    start_row = (st.session_state.current_page - 1) * st.session_state.filters["rows_per_page"] + 1
-                    end_row = min(st.session_state.current_page * st.session_state.filters["rows_per_page"], total_rows)
-                    total_pages = max(1, (total_rows + st.session_state.filters["rows_per_page"] - 1) // st.session_state.filters["rows_per_page"])
+                    st.success("✅ Done analyzing!")
+                    
                     st.markdown(
-                        f"<div style='text-align:center; font-weight:bold; padding-top:6px;'>"
-                        f"Page {st.session_state.current_page} of {total_pages} "
-                        f"— showing rows {start_row}-{end_row} of {total_rows}"
-                        f"</div>",
-                        unsafe_allow_html=True,
+                        """
+                        <style>
+                        .stat-card {
+                            background-color: #f9f9f9;
+                            padding: 20px;
+                            border-radius: 12px;
+                            text-align: center;
+                            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                        }
+                        .stat-title {
+                            font-size: 16px;
+                            font-weight: bold;
+                            color: #444;
+                            margin-bottom: 8px;
+                        }
+                        .stat-value {
+                            font-size: 28px;
+                            font-weight: bold;
+                            color: #222;
+                        }
+                        </style>
+                        """,
+                        unsafe_allow_html=True
                     )
-        
-                with toolbar[2]:
-                    page = st.selectbox(
-                        "",
-                        options=list(range(1, total_pages + 1)),
-                        index=st.session_state.current_page - 1,
-                        key="page_select",
-                        label_visibility="collapsed",
+            
+                    st.subheader("📌 Frame Summary Stats")
+            
+                    metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+            
+                    with metric_col1:
+                        st.markdown(f"<div class='stat-card'><div class='stat-title'>📦 Total Frames in Current Path</div><div class='stat-value'>{len(all_files)}</div></div>", unsafe_allow_html=True)
+                    with metric_col2:
+                        st.markdown(f"<div class='stat-card'><div class='stat-title'>⚡ Dynamic Frames</div><div class='stat-value'>{dynamic_count}</div></div>", unsafe_allow_html=True)
+                    with metric_col3:
+                        st.markdown(f"<div class='stat-card'><div class='stat-title'>📂 Static Frames</div><div class='stat-value'>{static_count}</div></div>", unsafe_allow_html=True)
+                    with metric_col4:
+                        st.markdown(f"<div class='stat-card'><div class='stat-title'>🕒 Past Unique Frames</div><div class='stat-value'>{len(past_frames)}</div></div>", unsafe_allow_html=True)
+            
+                    # Ensure defaults exist
+                    if "selected_new" not in st.session_state:
+                        st.session_state.selected_new = ["Yes", "No"]
+                    if "selected_change" not in st.session_state:
+                        st.session_state.selected_change = ["Yes", "No", "Error"]
+                    if "frame_search" not in st.session_state:
+                        st.session_state.frame_search = ""
+            
+                    if "selected_new" not in st.session_state:
+                        st.session_state["selected_new"] = ["Yes"]
+            
+                    if "selected_change" not in st.session_state:
+                        st.session_state["selected_change"] = ["Yes"]
+            
+                    if "search_id" not in st.session_state:
+                        st.session_state["search_id"] = ""
+            
+                    st.subheader("🔍 Filters")
+            
+                    col1, col2, col3 = st.columns([1, 1, 1.5])
+            
+                    with col1:
+                        selected_new = st.multiselect(
+                            "Is New Frame?",
+                            ["Yes", "No"],
+                            key="selected_new"
+                        )
+            
+                    with col2:
+                        selected_change = st.multiselect(
+                            "Impression Change?",
+                            ["Yes", "No", "Error"],
+                            key="selected_change"
+                        )
+            
+                    with col3:
+                        search_id = st.text_input("🔎 Search Frame ID", key="search_id")
+            
+            
+                    # Apply filters instantly
+                    filtered_df = df_result[
+                        df_result["Is New Frame?"].isin(st.session_state.selected_new) &
+                        df_result["Impression Change?"].isin(st.session_state.selected_change) &
+                        df_result["Frame Id"].str.contains(st.session_state.frame_search, case=False)
+                    ]
+            
+            
+                    sort_column = st.session_state.filters["sort_column"]
+                    ascending = st.session_state.filters["ascending"]
+                    filtered_df = filtered_df.sort_values(by=sort_column, ascending=ascending)
+            
+                    # --- Pagination Setup ---
+                    total_rows = len(filtered_df)
+                    if total_rows == 0:
+                        st.warning("⚠️ No matching frames.")
+                        st.stop()
+            
+                    # Keep current page in session state
+                    if "current_page" not in st.session_state:
+                        st.session_state.current_page = 1
+            
+                    # --- Compact Pagination Toolbar ---
+                    st.markdown("""
+                        <style>
+                        div[data-testid="stHorizontalBlock"] {
+                            justify-content: center !important;   /* Center toolbar */
+                            align-items: center;
+                        }
+                        div[data-testid="stButton"] > button.small-btn {
+                            padding: 0.25rem 0.6rem;
+                            font-size: 0.85rem;
+                            background-color: #f0f2f6;
+                            color: #333;
+                            border: 1px solid #d3d3d3;
+                            border-radius: 6px;
+                        }
+                        div[data-testid="stButton"] > button.small-btn:hover {
+                            background-color: #e0e0e0;
+                            color: black;
+                        }
+                        /* Make selectboxes compact */
+                        div[data-baseweb="select"] {
+                            min-height: 28px !important;
+                            font-size: 0.85rem !important;
+                        }
+                        div[data-baseweb="select"] > div {
+                            padding-top: 0 !important;
+                            padding-bottom: 0 !important;
+                            min-height: 28px !important;
+                        }
+                        </style>
+                    """, unsafe_allow_html=True)
+            
+                    # --- Toolbar Layout ---
+                    toolbar = st.columns([1, 5, 2, 2, 1], gap="small")
+            
+                    with toolbar[0]:
+                        if st.button("⬅️", key="prev_btn", help="Previous Page"):
+                            if st.session_state.current_page > 1:
+                                st.session_state.current_page -= 1
+            
+                    with toolbar[1]:
+                        # Show status
+                        start_row = (st.session_state.current_page - 1) * st.session_state.filters["rows_per_page"] + 1
+                        end_row = min(st.session_state.current_page * st.session_state.filters["rows_per_page"], total_rows)
+                        total_pages = max(1, (total_rows + st.session_state.filters["rows_per_page"] - 1) // st.session_state.filters["rows_per_page"])
+                        st.markdown(
+                            f"<div style='text-align:center; font-weight:bold; padding-top:6px;'>"
+                            f"Page {st.session_state.current_page} of {total_pages} "
+                            f"— showing rows {start_row}-{end_row} of {total_rows}"
+                            f"</div>",
+                            unsafe_allow_html=True,
+                        )
+            
+                    with toolbar[2]:
+                        page = st.selectbox(
+                            "",
+                            options=list(range(1, total_pages + 1)),
+                            index=st.session_state.current_page - 1,
+                            key="page_select",
+                            label_visibility="collapsed",
+                        )
+                        st.session_state.current_page = page
+            
+                    with toolbar[3]:
+                        rows_per_page = st.selectbox(
+                            "",
+                            [10, 20, 50, 100],
+                            index=1,
+                            key="rows_per_page",
+                            label_visibility="collapsed",
+                        )
+                        st.session_state.filters["rows_per_page"] = rows_per_page
+            
+                    with toolbar[4]:
+                        if st.button("➡️", key="next_btn", help="Next Page"):
+                            if st.session_state.current_page < total_pages:
+                                st.session_state.current_page += 1
+            
+                    # --- Slice DataFrame ---
+                    start = (st.session_state.current_page - 1) * st.session_state.filters["rows_per_page"]
+                    end = start + st.session_state.filters["rows_per_page"]
+                    paginated_df = filtered_df.iloc[start:end]
+            
+                    # Align all headers and text to the left
+                    def style_table(df):
+                        return df.style.set_table_styles(
+                            [{'selector': 'th', 'props': [('text-align', 'left')]},
+                             {'selector': 'td', 'props': [('text-align', 'left')]}]
+                        )
+            
+                    # Show only the HTML columns (drop Impact Variance (Value))
+                    st.write(
+                        style_table(paginated_df.drop(columns=["Impact Variance (Value)"])).to_html(escape=False, index=False),
+                        unsafe_allow_html=True
                     )
-                    st.session_state.current_page = page
+            
+                    # Extract relevant parts from S3 prefix to form filename
+                    prefix_parts = prefix.strip("/").split("/")
+            
+                    # Skip the first folder after the bucket (e.g., GB)
+                    # Join remaining parts with underscores
+                    if len(prefix_parts) > 1:
+                        name_parts = prefix_parts[1:]  # everything after 'GB'
+                    else:
+                        name_parts = prefix_parts
+            
+                    base_file_name = "_".join(name_parts)
+            
+                    col_dl1, col_dl2 = st.columns(2)
+                    with col_dl1:
+                        st.download_button(
+                            "📥 Download Filtered CSV",
+                            filtered_df.drop(columns=["Impact Variance Annually (in K)"]).to_csv(index=False),
+                            file_name=f"{base_file_name}_filtered.csv"
+                        )
+                    with col_dl2:
+                        st.download_button(
+                            "📦 Download Full CSV",
+                            df_result.drop(columns=["Impact Variance Annually (in K)"]).to_csv(index=False),
+                            file_name=f"{base_file_name}.csv"
+                        )
+            
+            
+                    st.subheader("📊 Frame Summary Breakdown")
+                    col1, col2, col3 = st.columns(3)
+            
+                    def make_pie_chart(labels, values, colors):
+                        fig = go.Figure(
+                            data=[go.Pie(
+                                labels=labels,
+                                values=values,
+                                hole=0.5,  # larger hole to keep labels away from the center
+                                marker=dict(colors=colors, line=dict(color='#ffffff', width=2)),
+                                textinfo='percent+label',
+                                textfont=dict(size=16, family="Arial", color='black'),
+                                insidetextorientation='radial',
+                                sort=False
+                            )]
+                        )
+                        fig.update_layout(
+                            margin=dict(t=20, b=20, l=20, r=20),
+                            showlegend=False,
+                            height=400,
+                            uniformtext=dict(minsize=14, mode='hide'),
+                            paper_bgcolor="rgba(0,0,0,0)",
+                        )
+                        return fig
+            
+                    with col1:
+                        st.markdown("**Frame Type Distribution**")
+                        data = df_result["Frame Type"].value_counts()
+                        fig1 = make_pie_chart(data.index, data.values, ["#4caf50", "#2196f3"])
+                        st.plotly_chart(fig1, use_container_width=True)
+            
+                    with col2:
+                        st.markdown("**Impression Change**")
+                        data = df_result["Impression Change?"].value_counts()
+                        fig2 = make_pie_chart(data.index, data.values, ["#4caf50", "#2196f3", "#f44336"])
+                        st.plotly_chart(fig2, use_container_width=True)
+            
+                    with col3:
+                        st.markdown("**New vs Existing Frames**")
+                        data = df_result["Is New Frame?"].value_counts()
+                        fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
+                        st.plotly_chart(fig3, use_container_width=True)
         
-                with toolbar[3]:
-                    rows_per_page = st.selectbox(
-                        "",
-                        [10, 20, 50, 100],
-                        index=1,
-                        key="rows_per_page",
-                        label_visibility="collapsed",
-                    )
-                    st.session_state.filters["rows_per_page"] = rows_per_page
         
-                with toolbar[4]:
-                    if st.button("➡️", key="next_btn", help="Next Page"):
-                        if st.session_state.current_page < total_pages:
-                            st.session_state.current_page += 1
-        
-                # --- Slice DataFrame ---
-                start = (st.session_state.current_page - 1) * st.session_state.filters["rows_per_page"]
-                end = start + st.session_state.filters["rows_per_page"]
-                paginated_df = filtered_df.iloc[start:end]
-        
-                # Align all headers and text to the left
-                def style_table(df):
-                    return df.style.set_table_styles(
-                        [{'selector': 'th', 'props': [('text-align', 'left')]},
-                         {'selector': 'td', 'props': [('text-align', 'left')]}]
-                    )
-        
-                # Show only the HTML columns (drop Impact Variance (Value))
-                st.write(
-                    style_table(paginated_df.drop(columns=["Impact Variance (Value)"])).to_html(escape=False, index=False),
-                    unsafe_allow_html=True
-                )
-        
-                # Extract relevant parts from S3 prefix to form filename
-                prefix_parts = prefix.strip("/").split("/")
-        
-                # Skip the first folder after the bucket (e.g., GB)
-                # Join remaining parts with underscores
-                if len(prefix_parts) > 1:
-                    name_parts = prefix_parts[1:]  # everything after 'GB'
-                else:
-                    name_parts = prefix_parts
-        
-                base_file_name = "_".join(name_parts)
-        
-                col_dl1, col_dl2 = st.columns(2)
-                with col_dl1:
-                    st.download_button(
-                        "📥 Download Filtered CSV",
-                        filtered_df.drop(columns=["Impact Variance Annually (in K)"]).to_csv(index=False),
-                        file_name=f"{base_file_name}_filtered.csv"
-                    )
-                with col_dl2:
-                    st.download_button(
-                        "📦 Download Full CSV",
-                        df_result.drop(columns=["Impact Variance Annually (in K)"]).to_csv(index=False),
-                        file_name=f"{base_file_name}.csv"
-                    )
-        
-        
-                st.subheader("📊 Frame Summary Breakdown")
-                col1, col2, col3 = st.columns(3)
-        
-                def make_pie_chart(labels, values, colors):
-                    fig = go.Figure(
-                        data=[go.Pie(
-                            labels=labels,
-                            values=values,
-                            hole=0.5,  # larger hole to keep labels away from the center
-                            marker=dict(colors=colors, line=dict(color='#ffffff', width=2)),
-                            textinfo='percent+label',
-                            textfont=dict(size=16, family="Arial", color='black'),
-                            insidetextorientation='radial',
-                            sort=False
-                        )]
-                    )
-                    fig.update_layout(
-                        margin=dict(t=20, b=20, l=20, r=20),
-                        showlegend=False,
-                        height=400,
-                        uniformtext=dict(minsize=14, mode='hide'),
-                        paper_bgcolor="rgba(0,0,0,0)",
-                    )
-                    return fig
-        
-                with col1:
-                    st.markdown("**Frame Type Distribution**")
-                    data = df_result["Frame Type"].value_counts()
-                    fig1 = make_pie_chart(data.index, data.values, ["#4caf50", "#2196f3"])
-                    st.plotly_chart(fig1, use_container_width=True)
-        
-                with col2:
-                    st.markdown("**Impression Change**")
-                    data = df_result["Impression Change?"].value_counts()
-                    fig2 = make_pie_chart(data.index, data.values, ["#4caf50", "#2196f3", "#f44336"])
-                    st.plotly_chart(fig2, use_container_width=True)
-        
-                with col3:
-                    st.markdown("**New vs Existing Frames**")
-                    data = df_result["Is New Frame?"].value_counts()
-                    fig3 = make_pie_chart(data.index, data.values, ["#ff9800", "#009688"])
-                    st.plotly_chart(fig3, use_container_width=True)
-    
-    
     
 # ==========================================
 # TAB 2 — AAPI V1 Impression Extractor
@@ -759,6 +759,7 @@ with tab3:
     
     
     
+
 
 
 
