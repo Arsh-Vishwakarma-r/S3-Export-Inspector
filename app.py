@@ -506,7 +506,7 @@ with tab1:
                     )
         
                 with col3:
-                    search_id = st.text_input("🔎 Search Frame ID", key="search_id")
+                    search_id = st.text_input("🔎 Search Frame ID", key="frame_search")
         
         
                 # Apply filters instantly
@@ -759,6 +759,7 @@ with tab3:
     
     
     
+
 
 
 
