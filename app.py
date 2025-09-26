@@ -215,31 +215,31 @@ with tab1:
         @st.cache_data(show_spinner=False)
         def read_user_s3_path(_s3_client, bucket, timestamp_prefix):
 
-        import json
-        import re
-        
-        try:
-            report_key = timestamp_prefix.strip("/") + "/report.json"
-            response = _s3_client.get_object(Bucket=bucket, Key=report_key)
-            data = json.loads(response["Body"].read().decode("utf-8"))
-        
-            input_paths = data.get("inputPaths", [])
-            if isinstance(input_paths, list) and input_paths:
-                # Take the first valid path
-                for path in input_paths:
-                    if isinstance(path, str) and path.strip():
-                        user_path = path.strip().replace("\\", "/").rstrip("/") + "/"
-                        break
-                else:
-                    return "N/A"
-        
-                # Clean trailing 'demographic' or 'demographics' using regex
-                user_path = re.sub(r'/demographic[s]?/$', '/', user_path, flags=re.IGNORECASE)
-                return user_path
-        
-            return "N/A"
-        except Exception:
-            return "N/A"
+            import json
+            import re
+            
+            try:
+                report_key = timestamp_prefix.strip("/") + "/report.json"
+                response = _s3_client.get_object(Bucket=bucket, Key=report_key)
+                data = json.loads(response["Body"].read().decode("utf-8"))
+            
+                input_paths = data.get("inputPaths", [])
+                if isinstance(input_paths, list) and input_paths:
+                    # Take the first valid path
+                    for path in input_paths:
+                        if isinstance(path, str) and path.strip():
+                            user_path = path.strip().replace("\\", "/").rstrip("/") + "/"
+                            break
+                    else:
+                        return "N/A"
+            
+                    # Clean trailing 'demographic' or 'demographics' using regex
+                    user_path = re.sub(r'/demographic[s]?/$', '/', user_path, flags=re.IGNORECASE)
+                    return user_path
+            
+                return "N/A"
+            except Exception:
+                return "N/A"
         
         st.title("🔍 S3 Export Inspector")#🅅🄸🄾🄾🄷
         col1, col2 = st.columns(2)
@@ -759,6 +759,7 @@ with tab3:
     
     
     
+
 
 
 
