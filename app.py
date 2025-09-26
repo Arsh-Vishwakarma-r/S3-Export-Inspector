@@ -214,10 +214,7 @@ with tab1:
                 return "Error"
         @st.cache_data(show_spinner=False)
         def read_user_s3_path(_s3_client, bucket, timestamp_prefix):
-        """
-        Return the base user S3 folder (e.g., .../r32/) by reading report.json
-        inside the given timestamp folder. Always strip trailing 'demographic[/]' or 'demographics[/]'.
-        """
+
         import json
         import re
         
@@ -762,5 +759,6 @@ with tab3:
     
     
     
+
 
 
