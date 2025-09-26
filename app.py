@@ -270,9 +270,8 @@ with tab1:
             st.session_state.show_results = True
         
         # The button can be clicked infinite times
-        if st.button("🚀 Give me Details"):
-            if s3_path_input:
-                load_data()
+        if st.button("🚀 Give me Details") and s3_path_input:
+            load_data()
         
         # Show results if flag is set
         if st.session_state.show_results and s3_path_input:
@@ -759,6 +758,7 @@ with tab3:
     
     
     
+
 
 
 
