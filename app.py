@@ -244,9 +244,9 @@ with tab1:
         st.title("🔍 S3 Export Inspector")#🅅🄸🄾🄾🄷
         col1, col2 = st.columns(2)
         with col1:
-        s3_path_input = st.text_input("📁 Enter S3 Path:", "")
+            s3_path_input = st.text_input("📁 Enter S3 Path:", "")
         with col2:
-        profile_input = st.text_input("🔑 AWS Profile (optional):", "")
+            profile_input = st.text_input("🔑 AWS Profile (optional):", "")
         
         if 'filters' not in st.session_state:
         st.session_state.filters = {
@@ -759,6 +759,7 @@ with tab3:
     
     
     
+
 
 
 
