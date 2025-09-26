@@ -205,13 +205,13 @@ with tab1:
         
         @st.cache_data(show_spinner=False)
         def read_impact_sum(_s3_client, bucket, key):
-        try:
-            response = _s3_client.get_object(Bucket=bucket, Key=key)
-            ext = os.path.splitext(key)[1]
-            df = pd.read_csv(io.BytesIO(response['Body'].read()), compression='bz2' if ext == '.bz2' else None)
-            return df['IMPACTS'].sum()
-        except Exception:
-            return "Error"
+            try:
+                response = _s3_client.get_object(Bucket=bucket, Key=key)
+                ext = os.path.splitext(key)[1]
+                df = pd.read_csv(io.BytesIO(response['Body'].read()), compression='bz2' if ext == '.bz2' else None)
+                return df['IMPACTS'].sum()
+            except Exception:
+                return "Error"
         @st.cache_data(show_spinner=False)
         def read_user_s3_path(_s3_client, bucket, timestamp_prefix):
         """
@@ -762,4 +762,5 @@ with tab3:
     
     
     
+
 
