@@ -13,8 +13,8 @@ import re
 import streamlit as st
 import boto3
 import requests
-from datetime import datetime, time
-
+import json
+from datetime import datetime
 
 st.set_page_config(layout="wide")
 
@@ -706,114 +706,115 @@ with tab1:
     pass  # Replace with your current SRC code
 
 
-# 🛰️ AAPI V1 Impression Extractor
-with tabs2:
-    st.header("🛰️ AAPI V1 Impression Extractor")
+# ----------------- TAB 2: Placeholder -----------------
+with tab2:
+    st.title("🛰️ AAPI V1 Impression Extractor")
 
-    # Inputs
-    market_enum = st.text_input("Market ENUM (e.g., ECN_GB)", "ECN_GB")
+    # 1️⃣ Market Enum
+    market_enum = st.text_input("Enter Market Enum (e.g., ECN_GB)", value="ECN_GB")
 
-    env = st.radio("Select Environment", ["UAT", "PRD"], horizontal=True)
+    # 2️⃣ Environment Selection
+    env = st.radio("Select Environment", ["UAT", "PRD"])
 
-    frame_input_type = st.radio("How do you want to provide RouteFrameCodes?", ["Text", "Upload File"])
-    frames = []
-    if frame_input_type == "Text":
-        frames = st.text_area("Enter RouteFrameCodes (comma separated)").split(",")
-        frames = [f.strip() for f in frames if f.strip()]
-    else:
-        file = st.file_uploader("Upload CSV or Excel with RouteFrameCodes", type=["csv", "xlsx"])
-        if file:
-            import pandas as pd
-            if file.name.endswith(".csv"):
-                df = pd.read_csv(file)
-            else:
-                df = pd.read_excel(file)
-            frames = df.iloc[:, 0].dropna().astype(str).tolist()
+    # 3️⃣ RouteFrameCode Input (text or file upload)
+    frame_input = st.text_area("Enter Frame Codes (comma-separated)")
+    uploaded_file = st.file_uploader("Or upload CSV/Excel file with frame list", type=["csv", "xlsx"])
 
-    col1, col2 = st.columns(2)
-    with col1:
-        start_dt = st.datetime_input("Start Date & Time")
-    with col2:
-        end_dt = st.datetime_input("End Date & Time")
-
-    sot = st.number_input("SOT (Default 100)", value=100, step=1)
-    per_hour = st.checkbox("Per-hour?", value=True)
-
-    fetch = st.button("🚀 Fetch Impressions")
-
-    if fetch:
-        if not frames:
-            st.error("Please provide at least one RouteFrameCode.")
+    frame_list = []
+    if uploaded_file:
+        if uploaded_file.name.endswith(".csv"):
+            df = pd.read_csv(uploaded_file)
         else:
-            # Build API URL
-            if env == "PRD":
-                url = f"https://audience-api.viooh.com/v1/audiences/primary/{market_enum}/impressions/_query"
+            df = pd.read_excel(uploaded_file)
+        frame_list = df.iloc[:, 0].dropna().astype(str).tolist()
+    elif frame_input.strip():
+        frame_list = [f.strip() for f in frame_input.split(",") if f.strip()]
+
+    # 4️⃣ Date Time Range
+    col1, col2 = st.columns(2)
+    start_dt = col1.datetime_input("Start Date & Time", value=datetime(2025, 9, 29, 10, 0))
+    end_dt = col2.datetime_input("End Date & Time", value=datetime(2025, 9, 29, 10, 59))
+
+    # 5️⃣ SOT Selection
+    sot = st.number_input("SOT (%)", min_value=1, max_value=100, value=100)
+
+    # 6️⃣ Per-Hour? (optional, default true)
+    per_hour = st.checkbox("Per Hour?", value=True)
+
+    # API Endpoints
+    API_URLS = {
+        "PRD": f"https://audience-api.viooh.com/v1/audiences/primary/{market_enum}/impressions/_query",
+        "UAT": f"https://audience-api.uat.develop.farm/v1/audiences/primary/{market_enum}/impressions/_query"
+    }
+
+    def call_api(frames_chunk):
+        """Call API for a chunk of frame IDs"""
+        payload = {
+            "asset-uuids": frames_chunk,
+            "category-id": "default",
+            "local-date-time-range": {
+                "from": start_dt.isoformat(),
+                "to": end_dt.isoformat()
+            },
+            "sot": sot,
+            "per-hour?": per_hour
+        }
+        headers = {"Content-Type": "application/json"}
+        resp = requests.post(API_URLS[env], headers=headers, json=payload)
+
+        try:
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            st.error(f"API call failed: {e}")
+            return None
+
+    # Submit button
+    if st.button("🚀 Run Impression Extractor"):
+        if not frame_list:
+            st.warning("⚠️ Please provide frame codes (either via text or file).")
+        else:
+            results = []
+            # Break frame list into chunks of 999
+            for i in range(0, len(frame_list), 999):
+                chunk = frame_list[i:i+999]
+                resp_json = call_api(chunk)
+                if resp_json:
+                    results.extend(resp_json.get("data", []))  # Assuming API returns {data: [...]}
+
+            if results:
+                # Display JSON preview
+                st.subheader("📜 API Response Preview")
+                st.json(results[:5])  # show first 5
+
+                # Convert to DataFrame
+                df_result = pd.json_normalize(results)
+
+                # Download buttons
+                st.download_button(
+                    "⬇️ Download JSON",
+                    data=json.dumps(results, indent=2),
+                    file_name="impressions.json",
+                    mime="application/json"
+                )
+
+                excel_buffer = io.BytesIO()
+                with pd.ExcelWriter(excel_buffer, engine="xlsxwriter") as writer:
+                    df_result.to_excel(writer, index=False, sheet_name="Impressions")
+                st.download_button(
+                    "⬇️ Download Excel",
+                    data=excel_buffer.getvalue(),
+                    file_name="impressions.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
             else:
-                url = f"https://audience-api.uat.develop.farm/v1/audiences/primary/{market_enum}/impressions/_query"
+                st.error("No results returned from API.")
 
-            headers = {"Content-Type": "application/json"}
-            payload_template = {
-                "category-id": "default",
-                "local-date-time-range": {
-                    "from": start_dt.strftime("%Y-%m-%dT%H:%M:%S"),
-                    "to": end_dt.strftime("%Y-%m-%dT%H:%M:%S"),
-                },
-                "sot": sot,
-                "per-hour?": per_hour,
-            }
-
-            all_results = []
-            batch_size = 999
-
-            progress = st.progress(0)
-            total_batches = (len(frames) + batch_size - 1) // batch_size
-
-            for i in range(0, len(frames), batch_size):
-                batch = frames[i:i+batch_size]
-                payload = payload_template.copy()
-                payload["asset-uuids"] = batch
-
-                try:
-                    resp = requests.post(url, headers=headers, json=payload, timeout=30)
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        all_results.append(data)
-                    else:
-                        st.error(f"Batch {i//batch_size+1}: Failed with {resp.status_code}")
-                        st.write("Response:", resp.text[:300])
-                except Exception as e:
-                    st.error(f"Batch {i//batch_size+1}: Request error {e}")
-
-                progress.progress((i+batch_size) / len(frames))
-
-            st.success("✅ Fetch Completed")
-
-            if all_results:
-                # Show merged JSON
-                st.subheader("📊 Raw Results")
-                st.json(all_results[0])  # show first batch for inspection
-
-                # Flatten into DataFrame
-                import pandas as pd
-                df_rows = []
-                for result in all_results:
-                    frame_imps = result.get("frame-impressions", {})
-                    for frame, val in frame_imps.items():
-                        df_rows.append({"Frame": frame, "Impressions": val})
-                if df_rows:
-                    df = pd.DataFrame(df_rows)
-                    st.dataframe(df)
-
-                    # Download button
-                    csv = df.to_csv(index=False).encode("utf-8")
-                    st.download_button("⬇️ Download Results as CSV", data=csv, file_name="impressions.csv", mime="text/csv")
 
 # ----------------- TAB 3: Placeholder -----------------
 with tab3:
     st.title("🔍 Impression Match Check")
     st.info("🚧 This section is under construction. Placeholder for Match Check logic.")
-
-
 
 
 
