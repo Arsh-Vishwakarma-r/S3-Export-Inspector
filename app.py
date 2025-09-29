@@ -12,6 +12,8 @@ import base64
 import re
 import streamlit as st
 import boto3
+from datetime import datetime, time
+import requests
 
 st.set_page_config(layout="wide")
 
@@ -703,16 +705,105 @@ with tab1:
     pass  # Replace with your current SRC code
 
 
-# ----------------- TAB 2: Placeholder -----------------
+# ----------------- TAB 2: AAPI V1 Impression Extractor -----------------
 with tab2:
     st.title("🛰️ AAPI V1 Impression Extractor")
-    st.info("🚧 This section is under construction. Placeholder for AAPI logic.")
+
+    # 1️⃣ Market ENUM
+    market_enum = st.text_input("Market ENUM (e.g., ECN_GB)")
+
+    # 2️⃣ Environment selection
+    env = st.radio("Environment", ["UAT", "PRD"])
+
+    # 3️⃣ RouteFrameCode input (CSV/Excel or comma-separated)
+    upload_file = st.file_uploader("Upload RouteFrameCodes (CSV or Excel)", type=["csv", "xlsx"])
+    routeframecodes = []
+    if upload_file:
+        if upload_file.name.endswith(".csv"):
+            df = pd.read_csv(upload_file)
+        else:
+            df = pd.read_excel(upload_file)
+        routeframecodes = df.iloc[:, 0].dropna().astype(str).tolist()
+    else:
+        manual_codes = st.text_area("Or enter RouteFrameCodes (comma-separated)")
+        if manual_codes:
+            routeframecodes = [c.strip() for c in manual_codes.split(",") if c.strip()]
+
+    # 4️⃣ Date & Time Range (✅ fixed using date_input + time_input)
+    col1, col2 = st.columns(2)
+
+    start_date = col1.date_input("Start Date", value=datetime(2025, 9, 29).date())
+    start_time = col1.time_input("Start Time", value=time(10, 0))
+    start_dt = datetime.combine(start_date, start_time)
+
+    end_date = col2.date_input("End Date", value=datetime(2025, 9, 29).date())
+    end_time = col2.time_input("End Time", value=time(10, 59))
+    end_dt = datetime.combine(end_date, end_time)
+
+    # 5️⃣ SOT selection
+    sot = st.number_input("SOT (default 100)", min_value=1, value=100)
+
+    # 6️⃣ Per-hour flag
+    per_hour = st.checkbox("Per-hour?", value=True)
+
+    # Call API
+    if st.button("Fetch Impressions"):
+        if not market_enum or not routeframecodes:
+            st.error("❌ Please provide Market ENUM and at least one RouteFrameCode")
+        else:
+            base_url = (
+                "https://audience-api.viooh.com/v1/audiences/primary"
+                if env == "PRD"
+                else "https://audience-api.uat.develop.farm/v1/audiences/primary"
+            )
+            url = f"{base_url}/{market_enum}/impressions/_query"
+
+            headers = {
+                "Content-Type": "application/json",
+                # TODO: Insert Auth header if required
+            }
+
+            payload = {
+                "asset-uuids": routeframecodes[:999],  # batching handled below
+                "category-id": "default",
+                "local-date-time-range": {
+                    "from": start_dt.isoformat(),
+                    "to": end_dt.isoformat(),
+                },
+                "sot": sot,
+                "per-hour?": per_hour,
+            }
+
+            results = []
+            # If >999, split into chunks
+            for i in range(0, len(routeframecodes), 999):
+                chunk = routeframecodes[i:i+999]
+                payload["asset-uuids"] = chunk
+                try:
+                    resp = requests.post(url, headers=headers, json=payload)
+                    resp.raise_for_status()
+                    results.append(resp.json())
+                except Exception as e:
+                    st.error(f"API error for chunk {i//999 + 1}: {e}")
+
+            if results:
+                st.success(f"✅ Received {len(results)} response batch(es).")
+                st.json(results[0])  # show first response for preview
+                # Flatten to DataFrame if possible
+                try:
+                    df_out = pd.json_normalize(results, max_level=2)
+                    st.dataframe(df_out.head())
+                    csv = df_out.to_csv(index=False).encode("utf-8")
+                    st.download_button("⬇️ Download CSV", csv, "impressions.csv", "text/csv")
+                except Exception as e:
+                    st.warning(f"Could not parse results into table: {e}")
 
 
 # ----------------- TAB 3: Placeholder -----------------
 with tab3:
     st.title("🔍 Impression Match Check")
     st.info("🚧 This section is under construction. Placeholder for Match Check logic.")
+
 
 
 
