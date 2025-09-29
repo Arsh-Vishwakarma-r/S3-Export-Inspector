@@ -706,104 +706,113 @@ with tab1:
     pass  # Replace with your current SRC code
 
 
-# ----------------- TAB 2: AAPI V1 Impression Extractor -----------------
-with tab2:
-    st.title("🛰️ AAPI V1 Impression Extractor")
+# 🛰️ AAPI V1 Impression Extractor
+with tabs2:
+    st.header("🛰️ AAPI V1 Impression Extractor")
 
-    # 1️⃣ Market ENUM
-    market_enum = st.text_input("Market ENUM (e.g., ECN_GB)")
+    # Inputs
+    market_enum = st.text_input("Market ENUM (e.g., ECN_GB)", "ECN_GB")
 
-    # 2️⃣ Environment selection
-    env = st.radio("Environment", ["UAT", "PRD"])
+    env = st.radio("Select Environment", ["UAT", "PRD"], horizontal=True)
 
-    # 3️⃣ RouteFrameCode input (CSV/Excel or comma-separated)
-    upload_file = st.file_uploader("Upload RouteFrameCodes (CSV or Excel)", type=["csv", "xlsx"])
-    routeframecodes = []
-    if upload_file:
-        if upload_file.name.endswith(".csv"):
-            df = pd.read_csv(upload_file)
-        else:
-            df = pd.read_excel(upload_file)
-        routeframecodes = df.iloc[:, 0].dropna().astype(str).tolist()
+    frame_input_type = st.radio("How do you want to provide RouteFrameCodes?", ["Text", "Upload File"])
+    frames = []
+    if frame_input_type == "Text":
+        frames = st.text_area("Enter RouteFrameCodes (comma separated)").split(",")
+        frames = [f.strip() for f in frames if f.strip()]
     else:
-        manual_codes = st.text_area("Or enter RouteFrameCodes (comma-separated)")
-        if manual_codes:
-            routeframecodes = [c.strip() for c in manual_codes.split(",") if c.strip()]
+        file = st.file_uploader("Upload CSV or Excel with RouteFrameCodes", type=["csv", "xlsx"])
+        if file:
+            import pandas as pd
+            if file.name.endswith(".csv"):
+                df = pd.read_csv(file)
+            else:
+                df = pd.read_excel(file)
+            frames = df.iloc[:, 0].dropna().astype(str).tolist()
 
-    # 4️⃣ Date & Time Range (✅ fixed using date_input + time_input)
     col1, col2 = st.columns(2)
+    with col1:
+        start_dt = st.datetime_input("Start Date & Time")
+    with col2:
+        end_dt = st.datetime_input("End Date & Time")
 
-    start_date = col1.date_input("Start Date", value=datetime(2025, 9, 29).date())
-    start_time = col1.time_input("Start Time", value=time(10, 0))
-    start_dt = datetime.combine(start_date, start_time)
-
-    end_date = col2.date_input("End Date", value=datetime(2025, 9, 29).date())
-    end_time = col2.time_input("End Time", value=time(10, 59))
-    end_dt = datetime.combine(end_date, end_time)
-
-    # 5️⃣ SOT selection
-    sot = st.number_input("SOT (default 100)", min_value=1, value=100)
-
-    # 6️⃣ Per-hour flag
+    sot = st.number_input("SOT (Default 100)", value=100, step=1)
     per_hour = st.checkbox("Per-hour?", value=True)
 
-    # Call API
-    if st.button("Fetch Impressions"):
-        if not market_enum or not routeframecodes:
-            st.error("❌ Please provide Market ENUM and at least one RouteFrameCode")
+    fetch = st.button("🚀 Fetch Impressions")
+
+    if fetch:
+        if not frames:
+            st.error("Please provide at least one RouteFrameCode.")
         else:
-            base_url = (
-                "https://audience-api.viooh.com/v1/audiences/primary"
-                if env == "PRD"
-                else "https://audience-api.uat.develop.farm/v1/audiences/primary"
-            )
-            url = f"{base_url}/{market_enum}/impressions/_query"
+            # Build API URL
+            if env == "PRD":
+                url = f"https://audience-api.viooh.com/v1/audiences/primary/{market_enum}/impressions/_query"
+            else:
+                url = f"https://audience-api.uat.develop.farm/v1/audiences/primary/{market_enum}/impressions/_query"
 
-            headers = {
-                "Content-Type": "application/json",
-                # TODO: Insert Auth header if required
-            }
-
-            payload = {
-                "asset-uuids": routeframecodes[:999],  # batching handled below
+            headers = {"Content-Type": "application/json"}
+            payload_template = {
                 "category-id": "default",
                 "local-date-time-range": {
-                    "from": start_dt.isoformat(),
-                    "to": end_dt.isoformat(),
+                    "from": start_dt.strftime("%Y-%m-%dT%H:%M:%S"),
+                    "to": end_dt.strftime("%Y-%m-%dT%H:%M:%S"),
                 },
                 "sot": sot,
                 "per-hour?": per_hour,
             }
 
-            results = []
-            # If >999, split into chunks
-            for i in range(0, len(routeframecodes), 999):
-                chunk = routeframecodes[i:i+999]
-                payload["asset-uuids"] = chunk
-                try:
-                    resp = requests.post(url, headers=headers, json=payload)
-                    resp.raise_for_status()
-                    results.append(resp.json())
-                except Exception as e:
-                    st.error(f"API error for chunk {i//999 + 1}: {e}")
+            all_results = []
+            batch_size = 999
 
-            if results:
-                st.success(f"✅ Received {len(results)} response batch(es).")
-                st.json(results[0])  # show first response for preview
-                # Flatten to DataFrame if possible
-                try:
-                    df_out = pd.json_normalize(results, max_level=2)
-                    st.dataframe(df_out.head())
-                    csv = df_out.to_csv(index=False).encode("utf-8")
-                    st.download_button("⬇️ Download CSV", csv, "impressions.csv", "text/csv")
-                except Exception as e:
-                    st.warning(f"Could not parse results into table: {e}")
+            progress = st.progress(0)
+            total_batches = (len(frames) + batch_size - 1) // batch_size
 
+            for i in range(0, len(frames), batch_size):
+                batch = frames[i:i+batch_size]
+                payload = payload_template.copy()
+                payload["asset-uuids"] = batch
+
+                try:
+                    resp = requests.post(url, headers=headers, json=payload, timeout=30)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        all_results.append(data)
+                    else:
+                        st.error(f"Batch {i//batch_size+1}: Failed with {resp.status_code}")
+                        st.write("Response:", resp.text[:300])
+                except Exception as e:
+                    st.error(f"Batch {i//batch_size+1}: Request error {e}")
+
+                progress.progress((i+batch_size) / len(frames))
+
+            st.success("✅ Fetch Completed")
+
+            if all_results:
+                # Show merged JSON
+                st.subheader("📊 Raw Results")
+                st.json(all_results[0])  # show first batch for inspection
+
+                # Flatten into DataFrame
+                import pandas as pd
+                df_rows = []
+                for result in all_results:
+                    frame_imps = result.get("frame-impressions", {})
+                    for frame, val in frame_imps.items():
+                        df_rows.append({"Frame": frame, "Impressions": val})
+                if df_rows:
+                    df = pd.DataFrame(df_rows)
+                    st.dataframe(df)
+
+                    # Download button
+                    csv = df.to_csv(index=False).encode("utf-8")
+                    st.download_button("⬇️ Download Results as CSV", data=csv, file_name="impressions.csv", mime="text/csv")
 
 # ----------------- TAB 3: Placeholder -----------------
 with tab3:
     st.title("🔍 Impression Match Check")
     st.info("🚧 This section is under construction. Placeholder for Match Check logic.")
+
 
 
 
