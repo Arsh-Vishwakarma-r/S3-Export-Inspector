@@ -707,7 +707,7 @@ with tab1:
 
 
 # 🛰️ AAPI V1 Impression Extractor
-with tabs2:
+with tabs[1]:
     st.header("🛰️ AAPI V1 Impression Extractor")
 
     # Inputs
@@ -812,6 +812,7 @@ with tabs2:
 with tab3:
     st.title("🔍 Impression Match Check")
     st.info("🚧 This section is under construction. Placeholder for Match Check logic.")
+
 
 
 
