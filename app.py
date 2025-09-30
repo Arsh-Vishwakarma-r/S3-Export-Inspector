@@ -729,9 +729,8 @@ with tab2:
         if manual_codes:
             routeframecodes = [c.strip() for c in manual_codes.split(",") if c.strip()]
 
-    # 4️⃣ Date & Time Range (✅ fixed using date_input + time_input)
+    # 4️⃣ Date & Time Range
     col1, col2 = st.columns(2)
-
     start_date = col1.date_input("Start Date", value=datetime(2025, 9, 29).date())
     start_time = col1.time_input("Start Time", value=time(10, 0))
     start_dt = datetime.combine(start_date, start_time)
@@ -746,7 +745,7 @@ with tab2:
     # 6️⃣ Per-hour flag
     per_hour = st.checkbox("Per-hour?", value=True)
 
-    # Call API
+    # 🚀 Call API
     if st.button("Fetch Impressions"):
         if not market_enum or not routeframecodes:
             st.error("❌ Please provide Market ENUM and at least one RouteFrameCode")
@@ -760,11 +759,11 @@ with tab2:
 
             headers = {
                 "Content-Type": "application/json",
-                # TODO: Insert Auth header if required
+                # ⚠️ TODO: Add Authorization if required
             }
 
-            payload = {
-                "asset-uuids": routeframecodes[:999],  # batching handled below
+            # Template payload
+            payload_template = {
                 "category-id": "default",
                 "local-date-time-range": {
                     "from": start_dt.isoformat(),
@@ -775,34 +774,50 @@ with tab2:
             }
 
             results = []
-            # If >999, split into chunks
+            total_batches = (len(routeframecodes) + 998) // 999
+            progress = st.progress(0)
+
             for i in range(0, len(routeframecodes), 999):
                 chunk = routeframecodes[i:i+999]
-                payload["asset-uuids"] = chunk
+                payload = {**payload_template, "asset-uuids": chunk}
+
+                st.info(f"📡 Sending batch {i//999+1}/{total_batches} "
+                        f"with {len(chunk)} frames to {url}")
+                st.json(payload if i == 0 else {**payload, "asset-uuids": f"[{len(chunk)} frames]"})
+
                 try:
-                    resp = requests.post(url, headers=headers, json=payload)
+                    resp = requests.post(url, headers=headers, json=payload, timeout=30)
+                    st.write(f"➡️ Status code: {resp.status_code}")
+                    st.write("➡️ Response preview:", resp.text[:500])  # first 500 chars
+
                     resp.raise_for_status()
                     results.append(resp.json())
                 except Exception as e:
-                    st.error(f"API error for chunk {i//999 + 1}: {e}")
+                    st.error(f"❌ API error in batch {i//999 + 1}: {e}")
+
+                progress.progress(min((i+999)/len(routeframecodes), 1.0))
 
             if results:
-                st.success(f"✅ Received {len(results)} response batch(es).")
-                st.json(results[0])  # show first response for preview
-                # Flatten to DataFrame if possible
+                st.success(f"✅ Received {len(results)} batch(es).")
+                st.subheader("📊 First Response JSON")
+                st.json(results[0])
+
+                # Try flatten
                 try:
                     df_out = pd.json_normalize(results, max_level=2)
+                    st.subheader("📋 Flattened Data")
                     st.dataframe(df_out.head())
+
                     csv = df_out.to_csv(index=False).encode("utf-8")
                     st.download_button("⬇️ Download CSV", csv, "impressions.csv", "text/csv")
                 except Exception as e:
-                    st.warning(f"Could not parse results into table: {e}")
-
+                    st.warning(f"⚠️ Could not parse results into table: {e}")
 
 # ----------------- TAB 3: Placeholder -----------------
 with tab3:
     st.title("🔍 Impression Match Check")
     st.info("🚧 This section is under construction. Placeholder for Match Check logic.")
+
 
 
 
